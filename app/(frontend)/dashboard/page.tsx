@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 import { getStoredPlayer, clearStoredPlayer } from "@/lib/player-storage";
+import teams from "@/lib/teams.json";
+import type { Team } from "@/types/Team";
 
 type PlayerInfo = {
   playerName: string;
   teamName: string;
+  teamId: string;
 };
+
+const ALL_TEAMS = teams as Team[];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -31,7 +36,11 @@ export default function DashboardPage() {
           router.replace("/login");
           return;
         }
-        setPlayer({ playerName: data.player.playerName, teamName: data.player.teamName });
+        setPlayer({
+          playerName: data.player.playerName,
+          teamName: data.player.teamName,
+          teamId: data.player.teamId,
+        });
       })
       .catch(() => {
         clearStoredPlayer();
@@ -39,6 +48,8 @@ export default function DashboardPage() {
       })
       .finally(() => setIsLoading(false));
   }, [router]);
+
+  const teamFlag = player ? ALL_TEAMS.find((t) => t.id === player.teamId)?.flag : null;
 
   if (isLoading) {
     return (
@@ -60,9 +71,20 @@ export default function DashboardPage() {
               <p className="text-sm font-semibold leading-none">{player.playerName}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{player.teamName}</p>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
-              {player.playerName.charAt(0).toUpperCase()}
-            </div>
+            {teamFlag ? (
+              <Image
+                src={`https://flagcdn.com/w80/${teamFlag}.png`}
+                alt={player.teamName}
+                width={40}
+                height={27}
+                className="rounded shadow-sm"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                {player.playerName.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
         )}
       </header>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import StarRating from "@/components/star-rating";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -164,7 +166,42 @@ export default function DraftPage() {
                 <span className="text-muted-foreground text-sm">Çekilyor...</span>
               </div>
             ) : currentTeam ? (
-              <p className="text-4xl font-bold text-center leading-tight">{currentTeam.name}</p>
+              <div className="flex flex-col items-center gap-3 w-full py-2">
+                {/* Flag */}
+                <Image
+                  src={`https://flagcdn.com/w160/${currentTeam.flag}.png`}
+                  alt={currentTeam.name}
+                  width={120}
+                  height={80}
+                  className="rounded shadow-md"
+                  unoptimized
+                />
+
+                {/* Team name */}
+                <p className="text-2xl font-bold text-center leading-tight">{currentTeam.name}</p>
+
+                {/* Overall */}
+                <p className="text-5xl font-black tabular-nums text-primary leading-none">
+                  {currentTeam.rating}
+                </p>
+
+                {/* Stars */}
+                <StarRating stars={currentTeam.stars} />
+
+                {/* ATK MID DEF */}
+                <div className="flex items-start justify-center gap-8 pt-1">
+                  {[
+                    { label: "ATK", value: currentTeam.attack },
+                    { label: "MID", value: currentTeam.midfield },
+                    { label: "DEF", value: currentTeam.defence },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex flex-col items-center gap-0.5">
+                      <span className="text-2xl font-bold tabular-nums">{value}</span>
+                      <span className="text-xs text-muted-foreground font-medium tracking-wide">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <p className="text-muted-foreground text-center text-sm">
                 {isLoadingTeams ? "Yükleniyor..." : "Takım seçmek için çekiliş yap"}
