@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   getStoredPlayer,
   getDraftState,
   setDraftState,
-  clearDraftState
+  clearDraftState,
 } from "@/lib/player-storage";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
@@ -22,9 +22,11 @@ export default function DraftPage() {
   const [playerName, setPlayerName] = useState<string>("");
   const [rollCount, setRollCount] = useState(0);
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
+  const [availableTeams, setAvailableTeams] = useState<Team[]>(ALL_TEAMS);
   const [isLockingIn, setIsLockingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRolling, setIsRolling] = useState(false);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(true);
 
   useEffect(() => {
     const player = getStoredPlayer();
@@ -36,14 +38,30 @@ export default function DraftPage() {
       const team = ALL_TEAMS.find((t) => t.id === draft.currentTeamId) ?? null;
       setCurrentTeam(team);
     }
+
+    fetch("/api/players/claimed-teams")
+      .then((res) => res.json())
+      .then((data) => {
+        const claimed: string[] = data.claimedTeamIds ?? [];
+        setAvailableTeams(ALL_TEAMS.filter((t) => !claimed.includes(t.id)));
+      })
+      .catch(() => {
+        // Fall back to full pool on error
+      })
+      .finally(() => setIsLoadingTeams(false));
   }, []);
 
   function handleRoll() {
+    if (availableTeams.length === 0) {
+      setError("Tüm takımlar alındı!");
+      return;
+    }
+
     setIsRolling(true);
     setError(null);
 
     setTimeout(() => {
-      const randomTeam = ALL_TEAMS[Math.floor(Math.random() * ALL_TEAMS.length)];
+      const randomTeam = availableTeams[Math.floor(Math.random() * availableTeams.length)];
       const newCount = rollCount + 1;
 
       setCurrentTeam(randomTeam);
@@ -63,7 +81,7 @@ export default function DraftPage() {
       const res = await fetch("/api/players/lock-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerName, teamId: currentTeam.id })
+        body: JSON.stringify({ playerName, teamId: currentTeam.id }),
       });
 
       if (res.ok) {
@@ -75,7 +93,8 @@ export default function DraftPage() {
       const data = await res.json();
 
       if (res.status === 409) {
-        // Team was just taken — void this roll so the player can try again
+        // Team was just taken between roll and lock-in — remove it from pool and refund the roll
+        setAvailableTeams((prev) => prev.filter((t) => t.id !== currentTeam.id));
         const refundedCount = Math.max(0, rollCount - 1);
         setRollCount(refundedCount);
         setCurrentTeam(null);
@@ -92,7 +111,7 @@ export default function DraftPage() {
   }
 
   const rollsLeft = MAX_ROLLS - rollCount;
-  const canRoll = rollsLeft > 0 && !isLockingIn;
+  const canRoll = rollsLeft > 0 && !isLockingIn && !isLoadingTeams && availableTeams.length > 0;
   const canLockIn = !!currentTeam && !isRolling && !isLockingIn;
   const isForcedLockIn = rollCount >= MAX_ROLLS && !!currentTeam;
 
@@ -131,7 +150,7 @@ export default function DraftPage() {
               <p className="text-4xl font-bold text-center leading-tight">{currentTeam.name}</p>
             ) : (
               <p className="text-muted-foreground text-center text-sm">
-                Takım seçmek için çekiliş yap
+                {isLoadingTeams ? "Yükleniyor..." : "Takım seçmek için çekiliş yap"}
               </p>
             )}
           </CardContent>
@@ -153,6 +172,13 @@ export default function DraftPage() {
             ? "Tüm hakkın bitti — takımını kilitle"
             : `${rollsLeft} çekiliş hakkın kaldı`}
         </p>
+
+        {/* Available teams count */}
+        {!isLoadingTeams && (
+          <p className="text-center text-xs text-muted-foreground -mt-4">
+            {availableTeams.length} takım mevcut
+          </p>
+        )}
 
         {/* Error */}
         {error && <p className="text-center text-sm text-destructive">{error}</p>}
