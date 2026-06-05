@@ -5,10 +5,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files and the Prisma schema
 COPY package.json package-lock.json* ./
 COPY ./prisma ./prisma/
-COPY prisma.config.ts ./prisma.config.ts
 
 # Install dependencies
 RUN npm ci
@@ -35,11 +33,9 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 COPY --from=deps /app/prisma ./prisma/
-COPY --from=deps /app/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the Next.js server
 CMD ["node", "server.js"]
