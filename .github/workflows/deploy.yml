@@ -15,7 +15,7 @@ jobs:
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
+          key: ${{ fromBase64(secrets.HETZNER_SSH_KEY) }}
           script: |
             cd ${{ secrets.APP_DIR }}
             git pull origin master
