@@ -1,0 +1,48 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+model Player {
+  id         String   @id // The user's entered ID/Name
+  playerName String
+  teamId     String   @unique // Ensures one unique national team per player
+  teamName   String
+  createdAt  DateTime @default(now())
+
+  // Relations for match tracking
+  matchesAsHome Match[] @relation("HomePlayer")
+  matchesAsAway Match[] @relation("AwayPlayer")
+  goals         Goal[]
+}
+
+model Match {
+  id           String   @id @default(uuid())
+  homePlayerId String
+  awayPlayerId String
+  homeScore    Int? // Nullable until the match is played
+  awayScore    Int?
+  round        Int // e.g., 1 for Quarter-finals, 2 for Semis, 3 for Final
+  isCompleted  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  // Define relationships
+  homePlayer Player @relation("HomePlayer", fields: [homePlayerId], references: [id])
+  awayPlayer Player @relation("AwayPlayer", fields: [awayPlayerId], references: [id])
+  goals      Goal[]
+}
+
+model Goal {
+  id          String  @id @default(uuid())
+  matchId     String
+  scorerId    String
+  assistantId String? // Nullable because some goals don't have assists
+  isOwnGoal   Boolean @default(false)
+
+  match  Match  @relation(fields: [matchId], references: [id])
+  scorer Player @relation(fields: [scorerId], references: [id])
+}
