@@ -8,6 +8,7 @@ export type StoredPlayer = {
 export type DraftState = {
   rollCount: number;
   currentTeamId: string | null;
+  seenTeamIds: string[];
 };
 
 export function getStoredPlayer(): StoredPlayer | null {
@@ -29,12 +30,13 @@ export function clearStoredPlayer(): void {
 }
 
 export function getDraftState(): DraftState {
-  if (typeof window === "undefined") return { rollCount: 0, currentTeamId: null };
+  if (typeof window === "undefined") return { rollCount: 0, currentTeamId: null, seenTeamIds: [] };
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? (JSON.parse(raw) as DraftState) : { rollCount: 0, currentTeamId: null };
+    const parsed = raw ? (JSON.parse(raw) as Partial<DraftState>) : {};
+    return { rollCount: parsed.rollCount ?? 0, currentTeamId: parsed.currentTeamId ?? null, seenTeamIds: parsed.seenTeamIds ?? [] };
   } catch {
-    return { rollCount: 0, currentTeamId: null };
+    return { rollCount: 0, currentTeamId: null, seenTeamIds: [] };
   }
 }
 

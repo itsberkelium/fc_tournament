@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAdminSession, getAdminPassword, clearAdminSession } from "@/lib/admin-auth";
+import teams from "@/lib/teams.json";
+import type { Team } from "@/types/Team";
+
+const ALL_TEAMS = teams as Team[];
 
 type Player = {
   id: string;
@@ -32,7 +37,16 @@ export default function AdminPage() {
   const [password, setPassword] = useState<string>("");
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [claimedTeamIds, setClaimedTeamIds] = useState<string[]>([]);
+  const [disabledTeamIds, setDisabledTeamIds] = useState<string[]>([]);
+  const [togglingTeamId, setTogglingTeamId] = useState<string | null>(null);
   const [tournamentStarted, setTournamentStarted] = useState(false);
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [playerSort, setPlayerSort] = useState<"name" | "team" | "date">("date");
+  const [playerSortDir, setPlayerSortDir] = useState<"asc" | "desc">("asc");
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamSort, setTeamSort] = useState<"name" | "rating" | "status">("name");
+  const [teamSortDir, setTeamSortDir] = useState<"asc" | "desc">("asc");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Player | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -58,14 +72,19 @@ export default function AdminPage() {
     if (!password) return;
     setIsLoading(true);
     try {
-      const [playersRes, statusRes] = await Promise.all([
+      const [playersRes, statusRes, claimedRes] = await Promise.all([
         fetch("/api/admin/players", { headers: authHeaders() }),
         fetch("/api/admin/tournament/status"),
+        fetch("/api/players/claimed-teams"),
       ]);
       const { players } = await playersRes.json();
       const { started } = await statusRes.json();
+      const { claimedTeamIds, disabledTeamIds } = await claimedRes.json();
+
       setPlayers(players ?? []);
       setTournamentStarted(started);
+      setClaimedTeamIds(claimedTeamIds ?? []);
+      setDisabledTeamIds(disabledTeamIds ?? []);
 
       if (started) {
         const matchesRes = await fetch("/api/admin/matches", { headers: authHeaders() });
@@ -115,6 +134,22 @@ export default function AdminPage() {
     }
   }
 
+  async function handleToggleTeam(teamId: string) {
+    setTogglingTeamId(teamId);
+    const isDisabled = disabledTeamIds.includes(teamId);
+    try {
+      await fetch(`/api/admin/teams/${teamId}`, {
+        method: isDisabled ? "DELETE" : "POST",
+        headers: authHeaders(),
+      });
+      setDisabledTeamIds((prev) =>
+        isDisabled ? prev.filter((id) => id !== teamId) : [...prev, teamId]
+      );
+    } finally {
+      setTogglingTeamId(null);
+    }
+  }
+
   async function handleSaveScore(matchId: string) {
     const input = scoreInputs[matchId];
     if (!input) return;
@@ -144,8 +179,53 @@ export default function AdminPage() {
 
   function handleLogout() {
     clearAdminSession();
-    sessionStorage.removeItem("fc26_admin_pw");
     router.replace("/admin/login");
+  }
+
+  const filteredPlayers = useMemo(() => {
+    const q = playerSearch.toLowerCase();
+    const filtered = players.filter((p) => p.playerName.toLowerCase().includes(q));
+    return [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (playerSort === "name") cmp = a.playerName.localeCompare(b.playerName);
+      else if (playerSort === "team") cmp = a.teamName.localeCompare(b.teamName);
+      else cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return playerSortDir === "asc" ? cmp : -cmp;
+    });
+  }, [players, playerSearch, playerSort, playerSortDir]);
+
+  const filteredTeams = useMemo(() => {
+    const q = teamSearch.toLowerCase();
+    const unclaimed = ALL_TEAMS.filter((t) => !claimedTeamIds.includes(t.id));
+    const filtered = unclaimed.filter((t) => t.name.toLowerCase().includes(q));
+    return [...filtered].sort((a, b) => {
+      const aDisabled = disabledTeamIds.includes(a.id);
+      const bDisabled = disabledTeamIds.includes(b.id);
+      let cmp = 0;
+      if (teamSort === "name") cmp = a.name.localeCompare(b.name);
+      else if (teamSort === "rating") cmp = a.rating - b.rating;
+      else cmp = Number(aDisabled) - Number(bDisabled);
+      return teamSortDir === "asc" ? cmp : -cmp;
+    });
+  }, [claimedTeamIds, disabledTeamIds, teamSearch, teamSort, teamSortDir]);
+
+  function SortButton({ label, field, current, dir, onSort }: {
+    label: string;
+    field: string;
+    current: string;
+    dir: "asc" | "desc";
+    onSort: (f: string) => void;
+  }) {
+    const active = current === field;
+    return (
+      <button
+        onClick={() => onSort(field)}
+        className={`flex items-center gap-1 hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : "text-muted-foreground"}`}
+      >
+        {label}
+        <span className="text-xs">{active ? (dir === "asc" ? "↑" : "↓") : "↕"}</span>
+      </button>
+    );
   }
 
   if (isLoading) {
@@ -158,7 +238,6 @@ export default function AdminPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Header */}
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
           <h1 className="text-lg font-bold">Yönetici Paneli</h1>
@@ -182,6 +261,12 @@ export default function AdminPage() {
               Oyuncular
               <Badge variant="secondary" className="ml-2 text-xs">{players.length}</Badge>
             </TabsTrigger>
+            <TabsTrigger value="teams">
+              Takımlar
+              {disabledTeamIds.length > 0 && (
+                <Badge variant="destructive" className="ml-2 text-xs">{disabledTeamIds.length} devre dışı</Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="matches">Maçlar</TabsTrigger>
           </TabsList>
 
@@ -189,42 +274,51 @@ export default function AdminPage() {
           <TabsContent value="players" className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                {tournamentStarted
-                  ? "Turnuva başladı — oyuncu kaydı kapalı."
-                  : `${players.length} oyuncu kayıtlı.`}
+                {tournamentStarted ? "Turnuva başladı — oyuncu kaydı kapalı." : `${players.length} oyuncu kayıtlı.`}
               </p>
               {!tournamentStarted && (
-                <Button
-                  onClick={handleStartTournament}
-                  disabled={isStarting || players.length < 2}
-                >
+                <Button onClick={handleStartTournament} disabled={isStarting || players.length < 2}>
                   {isStarting ? "Başlatılıyor..." : "Turnuvayı Başlat"}
                 </Button>
               )}
-              {tournamentStarted && (
-                <Badge variant="default">Turnuva Aktif</Badge>
-              )}
+              {tournamentStarted && <Badge variant="default">Turnuva Aktif</Badge>}
             </div>
+
+            <Input
+              placeholder="Oyuncu adı ara..."
+              value={playerSearch}
+              onChange={(e) => setPlayerSearch(e.target.value)}
+              className="max-w-xs"
+            />
 
             <div className="rounded-md border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Oyuncu</TableHead>
-                    <TableHead>Takım</TableHead>
-                    <TableHead>Kayıt Tarihi</TableHead>
+                    <TableHead>
+                      <SortButton label="Oyuncu" field="name" current={playerSort} dir={playerSortDir}
+                        onSort={(f) => { if (playerSort === f) setPlayerSortDir((d) => d === "asc" ? "desc" : "asc"); else { setPlayerSort(f as typeof playerSort); setPlayerSortDir("asc"); } }} />
+                    </TableHead>
+                    <TableHead>
+                      <SortButton label="Takım" field="team" current={playerSort} dir={playerSortDir}
+                        onSort={(f) => { if (playerSort === f) setPlayerSortDir((d) => d === "asc" ? "desc" : "asc"); else { setPlayerSort(f as typeof playerSort); setPlayerSortDir("asc"); } }} />
+                    </TableHead>
+                    <TableHead>
+                      <SortButton label="Kayıt Tarihi" field="date" current={playerSort} dir={playerSortDir}
+                        onSort={(f) => { if (playerSort === f) setPlayerSortDir((d) => d === "asc" ? "desc" : "asc"); else { setPlayerSort(f as typeof playerSort); setPlayerSortDir("asc"); } }} />
+                    </TableHead>
                     <TableHead className="w-[80px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {players.length === 0 ? (
+                  {filteredPlayers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Henüz kayıtlı oyuncu yok.
+                        {playerSearch ? "Sonuç bulunamadı." : "Henüz kayıtlı oyuncu yok."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    players.map((player) => (
+                    filteredPlayers.map((player) => (
                       <TableRow key={player.id}>
                         <TableCell className="font-medium">{player.playerName}</TableCell>
                         <TableCell>{player.teamName}</TableCell>
@@ -232,17 +326,93 @@ export default function AdminPage() {
                           {new Date(player.createdAt).toLocaleDateString("tr-TR")}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={tournamentStarted}
-                            onClick={() => setDeleteTarget(player)}
-                          >
+                          <Button variant="destructive" size="sm" disabled={tournamentStarted} onClick={() => setDeleteTarget(player)}>
                             Sil
                           </Button>
                         </TableCell>
                       </TableRow>
                     ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* Teams tab */}
+          <TabsContent value="teams" className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Çekilişe kapalı takımlar havuzdan çıkarılır. Seçilmiş takımlar burada gösterilmez.
+            </p>
+
+            <Input
+              placeholder="Takım adı ara..."
+              value={teamSearch}
+              onChange={(e) => setTeamSearch(e.target.value)}
+              className="max-w-xs"
+            />
+
+            <div className="rounded-md border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <SortButton label="Takım" field="name" current={teamSort} dir={teamSortDir}
+                        onSort={(f) => { if (teamSort === f) setTeamSortDir((d) => d === "asc" ? "desc" : "asc"); else { setTeamSort(f as typeof teamSort); setTeamSortDir("asc"); } }} />
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <SortButton label="OVR" field="rating" current={teamSort} dir={teamSortDir}
+                        onSort={(f) => { if (teamSort === f) setTeamSortDir((d) => d === "asc" ? "desc" : "asc"); else { setTeamSort(f as typeof teamSort); setTeamSortDir("asc"); } }} />
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <SortButton label="Durum" field="status" current={teamSort} dir={teamSortDir}
+                        onSort={(f) => { if (teamSort === f) setTeamSortDir((d) => d === "asc" ? "desc" : "asc"); else { setTeamSort(f as typeof teamSort); setTeamSortDir("asc"); } }} />
+                    </TableHead>
+                    <TableHead className="w-[120px]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTeams.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        {teamSearch ? "Sonuç bulunamadı." : "Gösterilecek takım yok."}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredTeams.map((team) => {
+                      const isDisabled = disabledTeamIds.includes(team.id);
+                      const isToggling = togglingTeamId === team.id;
+                      return (
+                        <TableRow key={team.id} className={isDisabled ? "opacity-50" : ""}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Image
+                                src={`https://flagcdn.com/w40/${team.flag}.png`}
+                                alt={team.name}
+                                width={28}
+                                height={19}
+                                className="rounded-sm"
+                                unoptimized
+                              />
+                              <span className="font-medium">{team.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center tabular-nums font-semibold">{team.rating}</TableCell>
+                          <TableCell className="text-center">
+                            {isDisabled ? <Badge variant="destructive">Devre Dışı</Badge> : <Badge variant="secondary">Aktif</Badge>}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant={isDisabled ? "outline" : "destructive"}
+                              disabled={isToggling}
+                              onClick={() => handleToggleTeam(team.id)}
+                            >
+                              {isToggling ? "..." : isDisabled ? "Etkinleştir" : "Devre Dışı"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -270,7 +440,6 @@ export default function AdminPage() {
                     {matches.map((match) => {
                       const input = scoreInputs[match.id];
                       const isSaving = savingMatchId === match.id;
-
                       return (
                         <TableRow key={match.id}>
                           <TableCell>

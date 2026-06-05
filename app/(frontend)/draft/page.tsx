@@ -49,7 +49,10 @@ export default function DraftPage() {
     ])
       .then(([claimedData, statusData]) => {
         const claimed: string[] = claimedData.claimedTeamIds ?? [];
-        setAvailableTeams(ALL_TEAMS.filter((t) => !claimed.includes(t.id)));
+        const disabled: string[] = claimedData.disabledTeamIds ?? [];
+        const seen: string[] = draft.seenTeamIds ?? [];
+        const excluded = new Set([...claimed, ...disabled, ...seen]);
+        setAvailableTeams(ALL_TEAMS.filter((t) => !excluded.has(t.id)));
         setTournamentStarted(statusData.started ?? false);
       })
       .catch(() => {})
@@ -68,10 +71,13 @@ export default function DraftPage() {
     setTimeout(() => {
       const randomTeam = availableTeams[Math.floor(Math.random() * availableTeams.length)];
       const newCount = rollCount + 1;
+      const draft = getDraftState();
+      const newSeen = [...(draft.seenTeamIds ?? []), randomTeam.id];
 
       setCurrentTeam(randomTeam);
       setRollCount(newCount);
-      setDraftState({ rollCount: newCount, currentTeamId: randomTeam.id });
+      setAvailableTeams((prev) => prev.filter((t) => t.id !== randomTeam.id));
+      setDraftState({ rollCount: newCount, currentTeamId: randomTeam.id, seenTeamIds: newSeen });
       setIsRolling(false);
     }, 600);
   }
@@ -98,12 +104,12 @@ export default function DraftPage() {
       const data = await res.json();
 
       if (res.status === 409) {
-        // Team was just taken between roll and lock-in — remove it from pool and refund the roll
-        setAvailableTeams((prev) => prev.filter((t) => t.id !== currentTeam.id));
+        // Team was just taken — it's already in seenTeamIds so won't reappear; just refund the roll
+        const draft = getDraftState();
         const refundedCount = Math.max(0, rollCount - 1);
         setRollCount(refundedCount);
         setCurrentTeam(null);
-        setDraftState({ rollCount: refundedCount, currentTeamId: null });
+        setDraftState({ ...draft, rollCount: refundedCount, currentTeamId: null });
         setError("Bu takım az önce başkası tarafından alındı. Tekrar çekiliş yap.");
       } else {
         setError(data?.message ?? "Bir hata oluştu. Tekrar dene.");

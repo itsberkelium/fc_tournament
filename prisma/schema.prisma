@@ -36,6 +36,11 @@ model Match {
   goals      Goal[]
 }
 
+model DisabledTeam {
+  teamId    String   @id
+  createdAt DateTime @default(now())
+}
+
 model Goal {
   id          String  @id @default(uuid())
   matchId     String
