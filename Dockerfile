@@ -7,8 +7,8 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 COPY ./prisma ./prisma/
+COPY prisma.config.ts ./prisma.config.ts
 
-# Install dependencies
 RUN npm ci
 
 # Stage 2: Build the application
@@ -21,18 +21,23 @@ COPY . .
 ENV DOCKER=true
 RUN npm run build
 
-# Stage 3: Production server
+# Stage 3: Migrations — has full node_modules to load prisma.config.ts
+FROM base AS migrator
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/prisma ./prisma/
+COPY --from=deps /app/prisma.config.ts ./prisma.config.ts
+CMD ["npx", "prisma", "migrate", "deploy"]
+
+# Stage 4: Production server
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy standalone output and static files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-
-COPY --from=deps /app/prisma ./prisma/
 
 EXPOSE 3000
 ENV PORT=3000

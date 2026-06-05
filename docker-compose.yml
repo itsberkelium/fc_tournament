@@ -14,6 +14,17 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+    depends_on:
+      db:
+        condition: service_healthy
+
   app:
     build:
       context: .
