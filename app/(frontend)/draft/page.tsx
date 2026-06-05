@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
   getStoredPlayer,
@@ -27,6 +28,7 @@ export default function DraftPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [isLoadingTeams, setIsLoadingTeams] = useState(true);
+  const [tournamentStarted, setTournamentStarted] = useState(false);
 
   useEffect(() => {
     const player = getStoredPlayer();
@@ -39,15 +41,16 @@ export default function DraftPage() {
       setCurrentTeam(team);
     }
 
-    fetch("/api/players/claimed-teams")
-      .then((res) => res.json())
-      .then((data) => {
-        const claimed: string[] = data.claimedTeamIds ?? [];
+    Promise.all([
+      fetch("/api/players/claimed-teams").then((r) => r.json()),
+      fetch("/api/admin/tournament/status").then((r) => r.json()),
+    ])
+      .then(([claimedData, statusData]) => {
+        const claimed: string[] = claimedData.claimedTeamIds ?? [];
         setAvailableTeams(ALL_TEAMS.filter((t) => !claimed.includes(t.id)));
+        setTournamentStarted(statusData.started ?? false);
       })
-      .catch(() => {
-        // Fall back to full pool on error
-      })
+      .catch(() => {})
       .finally(() => setIsLoadingTeams(false));
   }, []);
 
@@ -108,6 +111,20 @@ export default function DraftPage() {
     } finally {
       setIsLockingIn(false);
     }
+  }
+
+  if (tournamentStarted && !isLoadingTeams) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-4">
+          <Alert>
+            <AlertDescription className="text-center">
+              Turnuva başladı. Artık takım seçimi yapılamaz.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
   }
 
   const rollsLeft = MAX_ROLLS - rollCount;
