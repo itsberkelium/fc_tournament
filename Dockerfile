@@ -10,9 +10,8 @@ COPY package.json package-lock.json* ./
 COPY ./prisma ./prisma/
 COPY prisma.config.ts ./prisma.config.ts
 
-# Install dependencies and generate the Prisma Client
+# Install dependencies
 RUN npm ci
-RUN npx prisma generate
 
 # Stage 2: Build the application
 FROM base AS builder
@@ -20,7 +19,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build Next.js
+# Build Next.js (DOCKER=true enables standalone output mode)
+ENV DOCKER=true
 RUN npm run build
 
 # Stage 3: Production server
