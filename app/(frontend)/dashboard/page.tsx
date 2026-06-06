@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [standings, setStandings] = useState<StandingRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tournamentStarted, setTournamentStarted] = useState(false);
+  const [tournamentName, setTournamentName] = useState("EA FC 26 Ligi");
 
   const fetchLeaderboard = useCallback(async () => {
     const res = await fetch("/api/leaderboard");
@@ -71,8 +72,9 @@ export default function DashboardPage() {
       fetch(`/api/players/me?playerName=${encodeURIComponent(stored.playerName)}`).then((r) => r.json()),
       fetch("/api/admin/tournament/status").then((r) => r.json()),
       fetch("/api/leaderboard").then((r) => r.json()),
+      fetch("/api/settings").then((r) => r.json()),
     ])
-      .then(([playerData, statusData, leaderboardData]) => {
+      .then(([playerData, statusData, leaderboardData, settingsData]) => {
         if (!playerData.exists || !playerData.hasTeam) {
           clearStoredPlayer();
           router.replace("/login");
@@ -85,6 +87,7 @@ export default function DashboardPage() {
         });
         setTournamentStarted(statusData.started ?? false);
         setStandings(leaderboardData.standings ?? []);
+        setTournamentName(settingsData.settings?.tournamentName ?? "EA FC 26 Ligi");
       })
       .catch(() => {
         clearStoredPlayer();
@@ -112,7 +115,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-bold tracking-tight">EA FC 26 Ligi</h1>
+        <h1 className="text-lg font-bold tracking-tight">{tournamentName}</h1>
 
         {player && (
           <div className="flex items-center gap-3">

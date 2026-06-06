@@ -55,6 +55,7 @@ export default function FixturesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tournamentStarted, setTournamentStarted] = useState(false);
+  const [tournamentName, setTournamentName] = useState("EA FC 26 Ligi");
 
   useEffect(() => {
     const stored = getStoredPlayer();
@@ -67,8 +68,9 @@ export default function FixturesPage() {
       fetch(`/api/players/me?playerName=${encodeURIComponent(stored.playerName)}`).then((r) => r.json()),
       fetch("/api/admin/tournament/status").then((r) => r.json()),
       fetch("/api/fixtures").then((r) => r.json()),
+      fetch("/api/settings").then((r) => r.json()),
     ])
-      .then(([playerData, statusData, fixturesData]) => {
+      .then(([playerData, statusData, fixturesData, settingsData]) => {
         if (!playerData.exists || !playerData.hasTeam) {
           clearStoredPlayer();
           router.replace("/login");
@@ -81,6 +83,7 @@ export default function FixturesPage() {
         });
         setTournamentStarted(statusData.started ?? false);
         setMatches(fixturesData.matches ?? []);
+        setTournamentName(settingsData.settings?.tournamentName ?? "EA FC 26 Ligi");
       })
       .catch(() => {
         clearStoredPlayer();
@@ -109,7 +112,7 @@ export default function FixturesPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-bold tracking-tight">EA FC 26 Ligi</h1>
+        <h1 className="text-lg font-bold tracking-tight">{tournamentName}</h1>
 
         {player && (
           <div className="flex items-center gap-3">

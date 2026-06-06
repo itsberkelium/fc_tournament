@@ -41,6 +41,11 @@ model DisabledTeam {
   createdAt DateTime @default(now())
 }
 
+model Settings {
+  key   String @id
+  value String
+}
+
 model Goal {
   id          String  @id @default(uuid())
   matchId     String
