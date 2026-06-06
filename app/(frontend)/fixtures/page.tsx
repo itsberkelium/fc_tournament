@@ -283,7 +283,6 @@ export default function FixturesPage() {
                                       [match.id]: { ...prev[match.id], away: val },
                                     }));
                                   }}
-                                  }
                                 />
                               </div>
                             ) : match.isCompleted ? (
