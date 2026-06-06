@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import db from "@/lib/db";
 import { computeStandings } from "@/lib/standings";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";

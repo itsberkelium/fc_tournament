@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import db from "@/lib/db";
 import { FixturesClient } from "@/components/fixtures/fixtures-client";
 
