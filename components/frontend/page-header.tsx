@@ -68,7 +68,7 @@ export function PageHeader({ tournamentName, onPlayerLoaded }: PageHeaderProps) 
             className="text-xs text-muted-foreground"
             onClick={() => { clearStoredPlayer(); router.replace("/login"); }}
           >
-            Değiştir
+            Kullanıcı Değiştir
           </Button>
           <div className="text-right">
             <p className="text-sm font-semibold leading-none">{player.playerName}</p>
