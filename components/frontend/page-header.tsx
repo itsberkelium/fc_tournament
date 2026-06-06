@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { getStoredPlayer, clearStoredPlayer } from "@/lib/player-storage";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
@@ -61,6 +62,14 @@ export function PageHeader({ tournamentName, onPlayerLoaded }: PageHeaderProps) 
 
       {player && (
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => { clearStoredPlayer(); router.replace("/login"); }}
+          >
+            Değiştir
+          </Button>
           <div className="text-right">
             <p className="text-sm font-semibold leading-none">{player.playerName}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{player.teamName}</p>
