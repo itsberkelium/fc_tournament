@@ -55,6 +55,7 @@ export default function AdminPage() {
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [playoffEnabled, setPlayoffEnabled] = useState(false);
   const [playoffTeamCount, setPlayoffTeamCount] = useState<number>(4);
+  const [doubleLegs, setDoubleLegs] = useState(false);
   const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({});
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +128,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/tournament/start", {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ playoffEnabled, playoffTeamCount: playoffEnabled ? playoffTeamCount : 0 }),
+        body: JSON.stringify({ playoffEnabled, playoffTeamCount: playoffEnabled ? playoffTeamCount : 0, doubleLegs }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -545,6 +546,28 @@ export default function AdminPage() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
+              <Label>Çift maç (iç saha + deplasman)?</Label>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={doubleLegs ? "default" : "outline"}
+                  onClick={() => setDoubleLegs(true)}
+                  className="flex-1"
+                >
+                  Evet
+                </Button>
+                <Button
+                  size="sm"
+                  variant={!doubleLegs ? "default" : "outline"}
+                  onClick={() => setDoubleLegs(false)}
+                  className="flex-1"
+                >
+                  Hayır
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Play-off olacak mı?</Label>
               <div className="flex gap-2">
                 <Button
@@ -584,6 +607,7 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowStartDialog(false)} disabled={isStarting}>

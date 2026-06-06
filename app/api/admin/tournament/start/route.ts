@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Turnuva için en az 2 oyuncu gerekli." }, { status: 400 });
   }
 
-  // Generate all round-robin pairs
+  const body = await request.json().catch(() => ({}));
+  const doubleLegs = body.doubleLegs === true;
+
   const matches = [];
   for (let i = 0; i < players.length; i++) {
     for (let j = i + 1; j < players.length; j++) {
@@ -28,6 +30,16 @@ export async function POST(request: NextRequest) {
         round: 1,
         isCompleted: false,
       });
+
+      if (doubleLegs) {
+        matches.push({
+          id: crypto.randomUUID(),
+          homePlayerId: players[j].id,
+          awayPlayerId: players[i].id,
+          round: 2,
+          isCompleted: false,
+        });
+      }
     }
   }
 
