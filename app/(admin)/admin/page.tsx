@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
 import { getAdminSession, getAdminPassword, clearAdminSession } from "@/lib/admin-auth";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
@@ -51,6 +52,9 @@ export default function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<Player | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [showStartDialog, setShowStartDialog] = useState(false);
+  const [playoffEnabled, setPlayoffEnabled] = useState(false);
+  const [playoffTeamCount, setPlayoffTeamCount] = useState<number>(4);
   const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({});
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -116,12 +120,14 @@ export default function AdminPage() {
   }
 
   async function handleStartTournament() {
+    setShowStartDialog(false);
     setIsStarting(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/tournament/start", {
         method: "POST",
         headers: authHeaders(),
+        body: JSON.stringify({ playoffEnabled, playoffTeamCount: playoffEnabled ? playoffTeamCount : 0 }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -277,7 +283,7 @@ export default function AdminPage() {
                 {tournamentStarted ? "Turnuva başladı — oyuncu kaydı kapalı." : `${players.length} oyuncu kayıtlı.`}
               </p>
               {!tournamentStarted && (
-                <Button onClick={handleStartTournament} disabled={isStarting || players.length < 2}>
+                <Button onClick={() => setShowStartDialog(true)} disabled={isStarting || players.length < 2}>
                   {isStarting ? "Başlatılıyor..." : "Turnuvayı Başlat"}
                 </Button>
               )}
@@ -526,6 +532,69 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Tournament start confirmation dialog */}
+      <Dialog open={showStartDialog} onOpenChange={(open) => !open && setShowStartDialog(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Turnuvayı Başlat</DialogTitle>
+            <DialogDescription>
+              {players.length} oyuncu için lig maçları oluşturulacak. Başlamadan önce play-off ayarlarını belirle.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Play-off olacak mı?</Label>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={playoffEnabled ? "default" : "outline"}
+                  onClick={() => setPlayoffEnabled(true)}
+                  className="flex-1"
+                >
+                  Evet
+                </Button>
+                <Button
+                  size="sm"
+                  variant={!playoffEnabled ? "default" : "outline"}
+                  onClick={() => setPlayoffEnabled(false)}
+                  className="flex-1"
+                >
+                  Hayır
+                </Button>
+              </div>
+            </div>
+
+            {playoffEnabled && (
+              <div className="space-y-2">
+                <Label>Kaç takım play-off&apos;a katılacak?</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {[2, 4, 8].filter((n) => n <= players.length).map((n) => (
+                    <Button
+                      key={n}
+                      size="sm"
+                      variant={playoffTeamCount === n ? "default" : "outline"}
+                      onClick={() => setPlayoffTeamCount(n)}
+                    >
+                      İlk {n}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowStartDialog(false)} disabled={isStarting}>
+              İptal
+            </Button>
+            <Button onClick={handleStartTournament} disabled={isStarting}>
+              Başlat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
