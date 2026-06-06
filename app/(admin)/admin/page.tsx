@@ -29,6 +29,7 @@ type Match = {
   homeScore: number | null;
   awayScore: number | null;
   isCompleted: boolean;
+  round: number;
   homePlayer: { playerName: string; teamName: string };
   awayPlayer: { playerName: string; teamName: string };
 };
@@ -427,109 +428,122 @@ export default function AdminPage() {
           </TabsContent>
 
           {/* Matches tab */}
-          <TabsContent value="matches" className="space-y-4">
+          <TabsContent value="matches" className="space-y-6">
             {!tournamentStarted ? (
               <p className="text-sm text-muted-foreground py-8 text-center">
                 Maçları görmek için önce turnuvayı başlat.
               </p>
-            ) : (
-              <div className="rounded-md border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ev Sahibi</TableHead>
-                      <TableHead>Deplasman</TableHead>
-                      <TableHead className="text-center">Skor</TableHead>
-                      <TableHead className="w-[160px]" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {matches.map((match) => {
-                      const input = scoreInputs[match.id];
-                      const isSaving = savingMatchId === match.id;
-                      return (
-                        <TableRow key={match.id}>
-                          <TableCell>
-                            <div className="font-medium">{match.homePlayer.playerName}</div>
-                            <div className="text-xs text-muted-foreground">{match.homePlayer.teamName}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{match.awayPlayer.playerName}</div>
-                            <div className="text-xs text-muted-foreground">{match.awayPlayer.teamName}</div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {match.isCompleted && input === undefined ? (
-                              <span className="font-bold tabular-nums">
-                                {match.homeScore} – {match.awayScore}
-                              </span>
-                            ) : (
-                              <div className="flex items-center justify-center gap-1">
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  className="w-14 text-center"
-                                  placeholder="0"
-                                  value={input?.home ?? (match.homeScore?.toString() ?? "")}
-                                  onChange={(e) =>
-                                    setScoreInputs((prev) => ({
-                                      ...prev,
-                                      [match.id]: { home: e.target.value, away: prev[match.id]?.away ?? match.awayScore?.toString() ?? "" },
-                                    }))
-                                  }
-                                />
-                                <span className="text-muted-foreground">–</span>
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  className="w-14 text-center"
-                                  placeholder="0"
-                                  value={input?.away ?? (match.awayScore?.toString() ?? "")}
-                                  onChange={(e) =>
-                                    setScoreInputs((prev) => ({
-                                      ...prev,
-                                      [match.id]: { away: e.target.value, home: prev[match.id]?.home ?? match.homeScore?.toString() ?? "" },
-                                    }))
-                                  }
-                                />
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2 justify-end">
-                              {match.isCompleted && input === undefined ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setScoreInputs((prev) => ({
-                                      ...prev,
-                                      [match.id]: {
-                                        home: match.homeScore?.toString() ?? "",
-                                        away: match.awayScore?.toString() ?? "",
-                                      },
-                                    }))
-                                  }
-                                >
-                                  Düzenle
-                                </Button>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  disabled={isSaving || !input?.home || !input?.away}
-                                  onClick={() => handleSaveScore(match.id)}
-                                >
-                                  {isSaving ? "Kaydediliyor..." : "Kaydet"}
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+            ) : (() => {
+              const matchdays = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
+              return matchdays.map((day) => {
+                const dayMatches = matches.filter((m) => m.round === day);
+                const allDone = dayMatches.every((m) => m.isCompleted);
+                return (
+                  <div key={day} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold">{day}. Maç Günü</h3>
+                      {allDone && <Badge variant="secondary" className="text-xs">Tamamlandı</Badge>}
+                    </div>
+                    <div className="rounded-md border border-border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Ev Sahibi</TableHead>
+                            <TableHead>Deplasman</TableHead>
+                            <TableHead className="text-center">Skor</TableHead>
+                            <TableHead className="w-[160px]" />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {dayMatches.map((match) => {
+                            const input = scoreInputs[match.id];
+                            const isSaving = savingMatchId === match.id;
+                            return (
+                              <TableRow key={match.id}>
+                                <TableCell>
+                                  <div className="font-medium">{match.homePlayer.playerName}</div>
+                                  <div className="text-xs text-muted-foreground">{match.homePlayer.teamName}</div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{match.awayPlayer.playerName}</div>
+                                  <div className="text-xs text-muted-foreground">{match.awayPlayer.teamName}</div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {match.isCompleted && input === undefined ? (
+                                    <span className="font-bold tabular-nums">
+                                      {match.homeScore} – {match.awayScore}
+                                    </span>
+                                  ) : (
+                                    <div className="flex items-center justify-center gap-1">
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        className="w-14 text-center"
+                                        placeholder="0"
+                                        value={input?.home ?? (match.homeScore?.toString() ?? "")}
+                                        onChange={(e) =>
+                                          setScoreInputs((prev) => ({
+                                            ...prev,
+                                            [match.id]: { home: e.target.value, away: prev[match.id]?.away ?? match.awayScore?.toString() ?? "" },
+                                          }))
+                                        }
+                                      />
+                                      <span className="text-muted-foreground">–</span>
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        className="w-14 text-center"
+                                        placeholder="0"
+                                        value={input?.away ?? (match.awayScore?.toString() ?? "")}
+                                        onChange={(e) =>
+                                          setScoreInputs((prev) => ({
+                                            ...prev,
+                                            [match.id]: { away: e.target.value, home: prev[match.id]?.home ?? match.homeScore?.toString() ?? "" },
+                                          }))
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2 justify-end">
+                                    {match.isCompleted && input === undefined ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          setScoreInputs((prev) => ({
+                                            ...prev,
+                                            [match.id]: {
+                                              home: match.homeScore?.toString() ?? "",
+                                              away: match.awayScore?.toString() ?? "",
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        Düzenle
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        disabled={isSaving || !input?.home || !input?.away}
+                                        onClick={() => handleSaveScore(match.id)}
+                                      >
+                                        {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </TabsContent>
         </Tabs>
       </main>
