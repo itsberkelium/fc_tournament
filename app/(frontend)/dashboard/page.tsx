@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { getStoredPlayer, clearStoredPlayer } from "@/lib/player-storage";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import teams from "@/lib/teams.json";
@@ -136,6 +137,22 @@ export default function DashboardPage() {
           </div>
         )}
       </header>
+
+      {/* Nav */}
+      <nav className="flex gap-1 border-b border-border px-6">
+        <Link
+          href="/dashboard"
+          className="px-3 py-2.5 text-sm font-medium border-b-2 border-primary text-foreground"
+        >
+          Puan Tablosu
+        </Link>
+        <Link
+          href="/fixtures"
+          className="px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Fikstür
+        </Link>
+      </nav>
 
       <main className="flex flex-1 flex-col p-6 max-w-4xl w-full mx-auto space-y-4">
         <div className="flex items-center justify-between">
