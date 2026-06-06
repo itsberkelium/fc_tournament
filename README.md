@@ -1,4 +1,4 @@
-# EA FC 26 Lig Yöneticisi
+# Lig Yöneticisi
 
 A full-stack web application for managing a private EA FC 26 friendly league. Since EA does not provide a public API for private friendlies, this app facilitates a manual workflow for team drafting, matchmaking, and league standings.
 
