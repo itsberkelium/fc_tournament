@@ -62,6 +62,9 @@ export default function FixturesPage() {
   const [tournamentName, setTournamentName] = useState("EA FC 26 Ligi");
   const [scoreInputs, setScoreInputs] = useState<Record<string, ScoreInput>>({});
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"day" | "all">("day");
+  const [myMatchesOnly, setMyMatchesOnly] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   useEffect(() => {
     const stored = getStoredPlayer();
@@ -88,8 +91,13 @@ export default function FixturesPage() {
           teamId: playerData.player.teamId,
         });
         setTournamentStarted(statusData.started ?? false);
-        setMatches(fixturesData.matches ?? []);
+        const fetchedMatches: Match[] = fixturesData.matches ?? [];
+        setMatches(fetchedMatches);
         setTournamentName(settingsData.settings?.tournamentName ?? "EA FC 26 Ligi");
+        // Default selected day = first matchday with pending matches
+        const days = Array.from(new Set(fetchedMatches.map((m) => m.round))).sort((a, b) => a - b);
+        const current = days.find((d) => fetchedMatches.filter((m) => m.round === d).some((m) => !m.isCompleted)) ?? days[days.length - 1] ?? null;
+        setSelectedDay(current);
       })
       .catch(() => {
         clearStoredPlayer();
@@ -149,6 +157,17 @@ export default function FixturesPage() {
     matches.filter((m) => m.round === day).some((m) => !m.isCompleted)
   ) ?? matchdays[matchdays.length - 1];
 
+  const activeDay = selectedDay ?? currentMatchday;
+  const dayIndex = matchdays.indexOf(activeDay);
+
+  function isMyMatch(match: Match) {
+    return !!player && (match.homePlayer.playerName === player.playerName || match.awayPlayer.playerName === player.playerName);
+  }
+
+  function filterMatches(list: Match[]) {
+    return myMatchesOnly ? list.filter(isMyMatch) : list;
+  }
+
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -202,151 +221,191 @@ export default function FixturesPage() {
         </Link>
       </nav>
 
-      <main className="flex flex-1 flex-col p-6 max-w-2xl w-full mx-auto space-y-6">
+      <main className="flex flex-1 flex-col max-w-2xl w-full mx-auto">
         {!tournamentStarted || matches.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-16">
             <p className="text-sm text-muted-foreground">Turnuva başladığında fikstür burada görünecek.</p>
           </div>
         ) : (
-          matchdays.map((day) => {
-            const dayMatches = matches.filter((m) => m.round === day);
-            const allDone = dayMatches.every((m) => m.isCompleted);
-            const isCurrent = day === currentMatchday;
-
-            return (
-              <div key={day} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold">{day}. Maç Günü</h2>
-                  {isCurrent && !allDone && <Badge variant="default" className="text-xs">Güncel</Badge>}
-                  {allDone && <Badge variant="secondary" className="text-xs">Tamamlandı</Badge>}
-                </div>
-
-                <div className="rounded-md border border-border divide-y divide-border">
-                  {dayMatches.map((match) => {
-                    const isMyMatch =
-                      player &&
-                      (match.homePlayer.playerName === player.playerName ||
-                        match.awayPlayer.playerName === player.playerName);
-                    const input = scoreInputs[match.id];
-                    const isEditing = input !== undefined;
-                    const isSaving = savingMatchId === match.id;
-
-                    return (
-                      <div
-                        key={match.id}
-                        className={`px-4 py-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}
-                      >
-                        {/* Match row */}
-                        <div className="flex items-center gap-3">
-                          {/* Home */}
-                          <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-                            <div className="text-right min-w-0">
-                              <p className={`text-sm leading-none truncate ${isMyMatch && match.homePlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
-                                {match.homePlayer.teamName}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.homePlayer.playerName}</p>
-                            </div>
-                            <Flag teamId={match.homePlayer.teamId} teamName={match.homePlayer.teamName} />
-                          </div>
-
-                          {/* Score / inputs */}
-                          <div className="shrink-0 text-center">
-                            {isEditing ? (
-                              <div className="flex items-center gap-1">
-                                <Input
-                                  type="text"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  className="w-12 text-center px-1"
-                                  placeholder="0"
-                                  value={input.home}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/\D/g, "");
-                                    setScoreInputs((prev) => ({
-                                      ...prev,
-                                      [match.id]: { ...prev[match.id], home: val },
-                                    }));
-                                  }}
-                                />
-                                <span className="text-muted-foreground text-sm">–</span>
-                                <Input
-                                  type="text"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  className="w-12 text-center px-1"
-                                  placeholder="0"
-                                  value={input.away}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/\D/g, "");
-                                    setScoreInputs((prev) => ({
-                                      ...prev,
-                                      [match.id]: { ...prev[match.id], away: val },
-                                    }));
-                                  }}
-                                />
-                              </div>
-                            ) : match.isCompleted ? (
-                              <span className="text-sm font-bold tabular-nums w-16 inline-block">
-                                {match.homeScore} – {match.awayScore}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground font-medium w-16 inline-block">vs</span>
-                            )}
-                          </div>
-
-                          {/* Away */}
-                          <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
-                            <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
-                            <div className="min-w-0">
-                              <p className={`text-sm leading-none truncate ${isMyMatch && match.awayPlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
-                                {match.awayPlayer.teamName}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.awayPlayer.playerName}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Action row — only for my matches */}
-                        {isMyMatch && (
-                          <div className="flex justify-center gap-2">
-                            {isEditing ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  disabled={isSaving || input.home === "" || input.away === ""}
-                                  onClick={() => handleSave(match.id)}
-                                >
-                                  {isSaving ? "Kaydediliyor..." : "Kaydet"}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={isSaving}
-                                  onClick={() =>
-                                    setScoreInputs((prev) => {
-                                      const next = { ...prev };
-                                      delete next[match.id];
-                                      return next;
-                                    })
-                                  }
-                                >
-                                  İptal
-                                </Button>
-                              </>
-                            ) : (
-                              <Button size="sm" variant="outline" onClick={() => startEditing(match)}>
-                                {match.isCompleted ? "Skoru Düzenle" : "Skor Gir"}
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+          <>
+            {/* Toolbar */}
+            <div className="flex items-center justify-between px-6 py-3 border-b border-border gap-3">
+              {/* View toggle */}
+              <div className="flex rounded-md border border-border overflow-hidden text-xs font-medium shrink-0">
+                <button
+                  onClick={() => setViewMode("day")}
+                  className={`px-3 py-1.5 transition-colors ${viewMode === "day" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Günlük
+                </button>
+                <button
+                  onClick={() => setViewMode("all")}
+                  className={`px-3 py-1.5 border-l border-border transition-colors ${viewMode === "all" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Tümü
+                </button>
               </div>
-            );
-          })
+
+              {/* My matches toggle */}
+              <button
+                onClick={() => setMyMatchesOnly((v) => !v)}
+                className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border transition-colors ${myMatchesOnly ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+              >
+                Maçlarım
+              </button>
+            </div>
+
+            {/* Day navigator (day view only) */}
+            {viewMode === "day" && (
+              <div className="flex items-center justify-between px-6 py-3 border-b border-border">
+                <button
+                  onClick={() => setSelectedDay(matchdays[dayIndex - 1])}
+                  disabled={dayIndex <= 0}
+                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  ←
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">{activeDay}. Maç Günü</span>
+                  {activeDay === currentMatchday && matches.filter((m) => m.round === activeDay).some((m) => !m.isCompleted) && (
+                    <Badge variant="default" className="text-xs">Güncel</Badge>
+                  )}
+                  {matches.filter((m) => m.round === activeDay).every((m) => m.isCompleted) && (
+                    <Badge variant="secondary" className="text-xs">Tamamlandı</Badge>
+                  )}
+                </div>
+                <button
+                  onClick={() => setSelectedDay(matchdays[dayIndex + 1])}
+                  disabled={dayIndex >= matchdays.length - 1}
+                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  →
+                </button>
+              </div>
+            )}
+
+            {/* Match list */}
+            <div className="flex flex-col divide-y divide-border px-6 py-4 space-y-6">
+              {(viewMode === "day" ? [activeDay] : matchdays).map((day) => {
+                const dayMatches = filterMatches(matches.filter((m) => m.round === day));
+                const allDone = matches.filter((m) => m.round === day).every((m) => m.isCompleted);
+                const isCurrent = day === currentMatchday;
+
+                if (dayMatches.length === 0) return null;
+
+                return (
+                  <div key={day} className="space-y-2">
+                    {viewMode === "all" && (
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-sm font-semibold">{day}. Maç Günü</h2>
+                        {isCurrent && !allDone && <Badge variant="default" className="text-xs">Güncel</Badge>}
+                        {allDone && <Badge variant="secondary" className="text-xs">Tamamlandı</Badge>}
+                      </div>
+                    )}
+
+                    <div className="rounded-md border border-border divide-y divide-border">
+                      {dayMatches.map((match) => {
+                        const mine = isMyMatch(match);
+                        const input = scoreInputs[match.id];
+                        const isEditing = input !== undefined;
+                        const isSaving = savingMatchId === match.id;
+
+                        return (
+                          <div key={match.id} className={`px-4 py-3 space-y-2 ${mine ? "bg-primary/5" : ""}`}>
+                            <div className="flex items-center gap-3">
+                              {/* Home */}
+                              <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                                <div className="text-right min-w-0">
+                                  <p className={`text-sm leading-none truncate ${mine && match.homePlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
+                                    {match.homePlayer.teamName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.homePlayer.playerName}</p>
+                                </div>
+                                <Flag teamId={match.homePlayer.teamId} teamName={match.homePlayer.teamName} />
+                              </div>
+
+                              {/* Score / inputs */}
+                              <div className="shrink-0 text-center">
+                                {isEditing ? (
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      className="w-12 text-center px-1"
+                                      placeholder="0"
+                                      value={input.home}
+                                      onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, "");
+                                        setScoreInputs((prev) => ({ ...prev, [match.id]: { ...prev[match.id], home: val } }));
+                                      }}
+                                    />
+                                    <span className="text-muted-foreground text-sm">–</span>
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      className="w-12 text-center px-1"
+                                      placeholder="0"
+                                      value={input.away}
+                                      onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, "");
+                                        setScoreInputs((prev) => ({ ...prev, [match.id]: { ...prev[match.id], away: val } }));
+                                      }}
+                                    />
+                                  </div>
+                                ) : match.isCompleted ? (
+                                  <span className="text-sm font-bold tabular-nums w-16 inline-block">{match.homeScore} – {match.awayScore}</span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground font-medium w-16 inline-block">vs</span>
+                                )}
+                              </div>
+
+                              {/* Away */}
+                              <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
+                                <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
+                                <div className="min-w-0">
+                                  <p className={`text-sm leading-none truncate ${mine && match.awayPlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
+                                    {match.awayPlayer.teamName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.awayPlayer.playerName}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action row — only for my matches */}
+                            {mine && (
+                              <div className="flex justify-center gap-2">
+                                {isEditing ? (
+                                  <>
+                                    <Button size="sm" disabled={isSaving || input.home === "" || input.away === ""} onClick={() => handleSave(match.id)}>
+                                      {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                                    </Button>
+                                    <Button size="sm" variant="outline" disabled={isSaving}
+                                      onClick={() => setScoreInputs((prev) => { const next = { ...prev }; delete next[match.id]; return next; })}>
+                                      İptal
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button size="sm" variant="outline" onClick={() => startEditing(match)}>
+                                    {match.isCompleted ? "Skoru Düzenle" : "Skor Gir"}
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {myMatchesOnly && filterMatches(viewMode === "day" ? matches.filter((m) => m.round === activeDay) : matches).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">Bu görünümde maçın yok.</p>
+              )}
+            </div>
+          </>
         )}
       </main>
     </div>
