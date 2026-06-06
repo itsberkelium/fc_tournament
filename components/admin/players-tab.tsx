@@ -1,0 +1,183 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DeletePlayerDialog, type Player } from "@/components/admin/delete-player-dialog";
+import { StartTournamentDialog } from "@/components/admin/start-tournament-dialog";
+
+type SortField = "name" | "team" | "date";
+
+function SortButton({ label, field, current, dir, onSort }: {
+  label: string; field: string; current: string; dir: "asc" | "desc"; onSort: (f: string) => void;
+}) {
+  const active = current === field;
+  return (
+    <button onClick={() => onSort(field)} className={`flex items-center gap-1 hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+      {label}
+      <span className="text-xs">{active ? (dir === "asc" ? "↑" : "↓") : "↕"}</span>
+    </button>
+  );
+}
+
+type PlayersTabProps = {
+  password: string;
+  tournamentStarted: boolean;
+  onTournamentStarted: () => void;
+  onError?: (msg: string | null) => void;
+  onPlayerCountChange?: (count: number) => void;
+};
+
+export function PlayersTab({ password, tournamentStarted, onTournamentStarted, onError, onPlayerCountChange }: PlayersTabProps) {
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [playerSort, setPlayerSort] = useState<SortField>("date");
+  const [playerSortDir, setPlayerSortDir] = useState<"asc" | "desc">("asc");
+  const [deleteTarget, setDeleteTarget] = useState<Player | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showStartDialog, setShowStartDialog] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const authHeaders = useCallback(
+    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${password}` }),
+    [password]
+  );
+
+  useEffect(() => {
+    if (!password) return;
+    fetch("/api/admin/players", { headers: authHeaders() })
+      .then((r) => r.json())
+      .then(({ players }) => {
+        const list = players ?? [];
+        setPlayers(list);
+        onPlayerCountChange?.(list.length);
+      })
+      .finally(() => setIsLoading(false));
+  }, [password, authHeaders]);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await fetch(`/api/admin/players/${deleteTarget.id}`, { method: "DELETE", headers: authHeaders() });
+      setPlayers((prev) => {
+        const next = prev.filter((p) => p.id !== deleteTarget.id);
+        onPlayerCountChange?.(next.length);
+        return next;
+      });
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  async function handleStartTournament(options: { doubleLegs: boolean; playoffEnabled: boolean; playoffTeamCount: number }) {
+    setIsStarting(true);
+    setError(null);
+    setShowStartDialog(false);
+    try {
+      const res = await fetch("/api/admin/tournament/start", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(options),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.message);
+      else onTournamentStarted();
+    } finally {
+      setIsStarting(false);
+    }
+  }
+
+  function handleSort(field: string) {
+    if (playerSort === field) setPlayerSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setPlayerSort(field as SortField); setPlayerSortDir("asc"); }
+  }
+
+  const filteredPlayers = useMemo(() => {
+    const q = playerSearch.toLowerCase();
+    const filtered = players.filter((p) => p.playerName.toLowerCase().includes(q));
+    return [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (playerSort === "name") cmp = a.playerName.localeCompare(b.playerName);
+      else if (playerSort === "team") cmp = a.teamName.localeCompare(b.teamName);
+      else cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return playerSortDir === "asc" ? cmp : -cmp;
+    });
+  }, [players, playerSearch, playerSort, playerSortDir]);
+
+  if (isLoading) return <div className="py-8 text-center text-sm text-muted-foreground">Yükleniyor...</div>;
+
+  return (
+    <div className="space-y-4">
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {tournamentStarted ? "Turnuva başladı — oyuncu kaydı kapalı." : `${players.length} oyuncu kayıtlı.`}
+        </p>
+        {!tournamentStarted && (
+          <Button onClick={() => setShowStartDialog(true)} disabled={isStarting || players.length < 2}>
+            {isStarting ? "Başlatılıyor..." : "Turnuvayı Başlat"}
+          </Button>
+        )}
+        {tournamentStarted && <Badge variant="default">Turnuva Aktif</Badge>}
+      </div>
+
+      <Input placeholder="Oyuncu adı ara..." value={playerSearch} onChange={(e) => setPlayerSearch(e.target.value)} className="max-w-xs" />
+
+      <div className="rounded-md border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead><SortButton label="Oyuncu" field="name" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
+              <TableHead><SortButton label="Takım" field="team" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
+              <TableHead><SortButton label="Kayıt Tarihi" field="date" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
+              <TableHead className="w-[80px]" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredPlayers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  {playerSearch ? "Sonuç bulunamadı." : "Henüz kayıtlı oyuncu yok."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredPlayers.map((player) => (
+                <TableRow key={player.id}>
+                  <TableCell className="font-medium">{player.playerName}</TableCell>
+                  <TableCell>{player.teamName}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {new Date(player.createdAt).toLocaleDateString("tr-TR")}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="destructive" size="sm" disabled={tournamentStarted} onClick={() => setDeleteTarget(player)}>Sil</Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <StartTournamentDialog
+        isOpen={showStartDialog}
+        playerCount={players.length}
+        isStarting={isStarting}
+        onClose={() => setShowStartDialog(false)}
+        onConfirm={handleStartTournament}
+      />
+      <DeletePlayerDialog
+        target={deleteTarget}
+        isDeleting={isDeleting}
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
+    </div>
+  );
+}
