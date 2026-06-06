@@ -11,17 +11,19 @@ export async function GET(request: Request) {
     }
 
     const player = await db.player.findFirst({
-      where: { playerName }
+      where: { playerName: { equals: playerName, mode: "insensitive" } },
     });
 
     if (!player) {
-      return NextResponse.json({ exists: false, hasTeam: false });
+      const lockSetting = await db.settings.findUnique({ where: { key: "registrationLocked" } });
+      const registrationLocked = lockSetting?.value === "true";
+      return NextResponse.json({ exists: false, hasTeam: false, registrationLocked });
     }
 
     return NextResponse.json({
       exists: true,
       hasTeam: !!player.teamId,
-      player
+      player,
     });
   } catch (error) {
     console.error(error);

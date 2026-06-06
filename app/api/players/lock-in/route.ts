@@ -19,6 +19,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Kayıt şu an kapalı." }, { status: 403 });
     }
 
+    const existingName = await db.player.findFirst({
+      where: { playerName: { equals: playerName, mode: "insensitive" } },
+    });
+    if (existingName) {
+      return NextResponse.json({ message: "Bu isimle zaten bir oyuncu kayıtlı." }, { status: 409 });
+    }
+
     const existingTeam = await db.player.findFirst({
       where: { teamId: teamId }
     });
