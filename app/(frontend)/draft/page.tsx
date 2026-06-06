@@ -145,7 +145,7 @@ export default function DraftPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="space-y-1 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Çekiliş</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Kura</h1>
           <p className="text-muted-foreground text-sm">Milli takımını belirle ve seç</p>
         </div>
 
@@ -251,7 +251,7 @@ export default function DraftPage() {
             variant={isForcedLockIn ? "secondary" : "default"}
             className="w-full"
           >
-            {rollCount === 0 ? "Çekiliş Yap" : "Tekrar Çek"}
+            {rollCount === 0 ? "Kura Çek" : "Tekrar Çek"}
           </Button>
 
           <Button
@@ -266,7 +266,7 @@ export default function DraftPage() {
 
         {isForcedLockIn && (
           <p className="text-center text-xs text-muted-foreground">
-            Çekiliş hakkın doldu. Yukarıdaki takımı seçmen gerekiyor.
+            Kura hakkın doldu. Yukarıdaki takımı seçmen gerekiyor.
           </p>
         )}
       </div>

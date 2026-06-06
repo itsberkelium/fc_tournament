@@ -349,7 +349,7 @@ export default function AdminPage() {
           {/* Teams tab */}
           <TabsContent value="teams" className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Çekilişe kapalı takımlar havuzdan çıkarılır. Seçilmiş takımlar burada gösterilmez.
+              Kuraya kapalı takımlar havuzdan çıkarılır. Seçilmiş takımlar burada gösterilmez.
             </p>
 
             <Input
