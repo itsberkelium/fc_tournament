@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import { getAdminSession, getAdminPassword, clearAdminSession } from "@/lib/admin-auth";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
@@ -251,9 +252,14 @@ export default function AdminPage() {
           <h1 className="text-lg font-bold">Yönetici Paneli</h1>
           <p className="text-xs text-muted-foreground">EA FC 26 Ligi</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          Çıkış
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/settings">
+            <Button variant="ghost" size="sm">Ayarlar</Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            Çıkış
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">

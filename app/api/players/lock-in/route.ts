@@ -14,6 +14,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const lockSetting = await db.settings.findUnique({ where: { key: "registrationLocked" } });
+    if (lockSetting?.value === "true") {
+      return NextResponse.json({ message: "Kayıt şu an kapalı." }, { status: 403 });
+    }
+
     const existingTeam = await db.player.findFirst({
       where: { teamId: teamId }
     });
