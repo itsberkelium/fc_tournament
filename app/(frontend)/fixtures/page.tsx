@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getStoredPlayer, clearStoredPlayer } from "@/lib/player-storage";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
@@ -32,6 +34,8 @@ type Match = {
   awayPlayer: MatchPlayer;
 };
 
+type ScoreInput = { home: string; away: string };
+
 const ALL_TEAMS = teams as Team[];
 
 function Flag({ teamId, teamName }: { teamId: string; teamName: string }) {
@@ -56,6 +60,8 @@ export default function FixturesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [tournamentStarted, setTournamentStarted] = useState(false);
   const [tournamentName, setTournamentName] = useState("EA FC 26 Ligi");
+  const [scoreInputs, setScoreInputs] = useState<Record<string, ScoreInput>>({});
+  const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = getStoredPlayer();
@@ -92,11 +98,53 @@ export default function FixturesPage() {
       .finally(() => setIsLoading(false));
   }, [router]);
 
+  async function handleSave(matchId: string) {
+    if (!player) return;
+    const input = scoreInputs[matchId];
+    if (!input || input.home === "" || input.away === "") return;
+
+    setSavingMatchId(matchId);
+    try {
+      const res = await fetch(`/api/matches/${matchId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerName: player.playerName,
+          homeScore: Number(input.home),
+          awayScore: Number(input.away),
+        }),
+      });
+      if (res.ok) {
+        setMatches((prev) =>
+          prev.map((m) =>
+            m.id === matchId
+              ? { ...m, homeScore: Number(input.home), awayScore: Number(input.away), isCompleted: true }
+              : m
+          )
+        );
+        setScoreInputs((prev) => {
+          const next = { ...prev };
+          delete next[matchId];
+          return next;
+        });
+      }
+    } finally {
+      setSavingMatchId(null);
+    }
+  }
+
+  function startEditing(match: Match) {
+    setScoreInputs((prev) => ({
+      ...prev,
+      [match.id]: {
+        home: match.homeScore?.toString() ?? "",
+        away: match.awayScore?.toString() ?? "",
+      },
+    }));
+  }
+
   const teamFlag = player ? ALL_TEAMS.find((t) => t.id === player.teamId)?.flag : null;
-
   const matchdays = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
-
-  // Find the first matchday that still has pending matches — treat it as "current"
   const currentMatchday = matchdays.find((day) =>
     matches.filter((m) => m.round === day).some((m) => !m.isCompleted)
   ) ?? matchdays[matchdays.length - 1];
@@ -169,12 +217,8 @@ export default function FixturesPage() {
               <div key={day} className="space-y-2">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-semibold">{day}. Maç Günü</h2>
-                  {isCurrent && !allDone && (
-                    <Badge variant="default" className="text-xs">Güncel</Badge>
-                  )}
-                  {allDone && (
-                    <Badge variant="secondary" className="text-xs">Tamamlandı</Badge>
-                  )}
+                  {isCurrent && !allDone && <Badge variant="default" className="text-xs">Güncel</Badge>}
+                  {allDone && <Badge variant="secondary" className="text-xs">Tamamlandı</Badge>}
                 </div>
 
                 <div className="rounded-md border border-border divide-y divide-border">
@@ -183,44 +227,115 @@ export default function FixturesPage() {
                       player &&
                       (match.homePlayer.playerName === player.playerName ||
                         match.awayPlayer.playerName === player.playerName);
+                    const input = scoreInputs[match.id];
+                    const isEditing = input !== undefined;
+                    const isSaving = savingMatchId === match.id;
 
                     return (
                       <div
                         key={match.id}
-                        className={`flex items-center px-4 py-3 gap-3 ${isMyMatch ? "bg-primary/5" : ""}`}
+                        className={`px-4 py-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}
                       >
-                        {/* Home */}
-                        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-                          <div className="text-right min-w-0">
-                            <p className={`text-sm leading-none truncate ${isMyMatch && match.homePlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
-                              {match.homePlayer.teamName}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.homePlayer.playerName}</p>
+                        {/* Match row */}
+                        <div className="flex items-center gap-3">
+                          {/* Home */}
+                          <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                            <div className="text-right min-w-0">
+                              <p className={`text-sm leading-none truncate ${isMyMatch && match.homePlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
+                                {match.homePlayer.teamName}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.homePlayer.playerName}</p>
+                            </div>
+                            <Flag teamId={match.homePlayer.teamId} teamName={match.homePlayer.teamName} />
                           </div>
-                          <Flag teamId={match.homePlayer.teamId} teamName={match.homePlayer.teamName} />
+
+                          {/* Score / inputs */}
+                          <div className="shrink-0 text-center">
+                            {isEditing ? (
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  className="w-12 text-center px-1"
+                                  placeholder="0"
+                                  value={input.home}
+                                  onChange={(e) =>
+                                    setScoreInputs((prev) => ({
+                                      ...prev,
+                                      [match.id]: { ...prev[match.id], home: e.target.value },
+                                    }))
+                                  }
+                                />
+                                <span className="text-muted-foreground text-sm">–</span>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  className="w-12 text-center px-1"
+                                  placeholder="0"
+                                  value={input.away}
+                                  onChange={(e) =>
+                                    setScoreInputs((prev) => ({
+                                      ...prev,
+                                      [match.id]: { ...prev[match.id], away: e.target.value },
+                                    }))
+                                  }
+                                />
+                              </div>
+                            ) : match.isCompleted ? (
+                              <span className="text-sm font-bold tabular-nums w-16 inline-block">
+                                {match.homeScore} – {match.awayScore}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground font-medium w-16 inline-block">vs</span>
+                            )}
+                          </div>
+
+                          {/* Away */}
+                          <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
+                            <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
+                            <div className="min-w-0">
+                              <p className={`text-sm leading-none truncate ${isMyMatch && match.awayPlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
+                                {match.awayPlayer.teamName}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.awayPlayer.playerName}</p>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Score / vs */}
-                        <div className="w-16 text-center shrink-0">
-                          {match.isCompleted ? (
-                            <span className="text-sm font-bold tabular-nums">
-                              {match.homeScore} – {match.awayScore}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground font-medium">vs</span>
-                          )}
-                        </div>
-
-                        {/* Away */}
-                        <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
-                          <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
-                          <div className="min-w-0">
-                            <p className={`text-sm leading-none truncate ${isMyMatch && match.awayPlayer.playerName === player?.playerName ? "font-semibold" : ""}`}>
-                              {match.awayPlayer.teamName}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.awayPlayer.playerName}</p>
+                        {/* Action row — only for my matches */}
+                        {isMyMatch && (
+                          <div className="flex justify-center gap-2">
+                            {isEditing ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  disabled={isSaving || input.home === "" || input.away === ""}
+                                  onClick={() => handleSave(match.id)}
+                                >
+                                  {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isSaving}
+                                  onClick={() =>
+                                    setScoreInputs((prev) => {
+                                      const next = { ...prev };
+                                      delete next[match.id];
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  İptal
+                                </Button>
+                              </>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={() => startEditing(match)}>
+                                {match.isCompleted ? "Skoru Düzenle" : "Skor Gir"}
+                              </Button>
+                            )}
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
