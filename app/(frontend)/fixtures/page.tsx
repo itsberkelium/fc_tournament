@@ -254,30 +254,35 @@ export default function FixturesPage() {
                             {isEditing ? (
                               <div className="flex items-center gap-1">
                                 <Input
-                                  type="number"
-                                  min={0}
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   className="w-12 text-center px-1"
                                   placeholder="0"
                                   value={input.home}
-                                  onChange={(e) =>
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, "");
                                     setScoreInputs((prev) => ({
                                       ...prev,
-                                      [match.id]: { ...prev[match.id], home: e.target.value },
-                                    }))
-                                  }
+                                      [match.id]: { ...prev[match.id], home: val },
+                                    }));
+                                  }}
                                 />
                                 <span className="text-muted-foreground text-sm">–</span>
                                 <Input
-                                  type="number"
-                                  min={0}
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   className="w-12 text-center px-1"
                                   placeholder="0"
                                   value={input.away}
-                                  onChange={(e) =>
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, "");
                                     setScoreInputs((prev) => ({
                                       ...prev,
-                                      [match.id]: { ...prev[match.id], away: e.target.value },
-                                    }))
+                                      [match.id]: { ...prev[match.id], away: val },
+                                    }));
+                                  }}
                                   }
                                 />
                               </div>

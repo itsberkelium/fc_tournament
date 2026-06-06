@@ -482,31 +482,35 @@ export default function AdminPage() {
                                   ) : (
                                     <div className="flex items-center justify-center gap-1">
                                       <Input
-                                        type="number"
-                                        min={0}
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         className="w-14 text-center"
                                         placeholder="0"
                                         value={input?.home ?? (match.homeScore?.toString() ?? "")}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
+                                          const val = e.target.value.replace(/\D/g, "");
                                           setScoreInputs((prev) => ({
                                             ...prev,
-                                            [match.id]: { home: e.target.value, away: prev[match.id]?.away ?? match.awayScore?.toString() ?? "" },
-                                          }))
-                                        }
+                                            [match.id]: { home: val, away: prev[match.id]?.away ?? match.awayScore?.toString() ?? "" },
+                                          }));
+                                        }}
                                       />
                                       <span className="text-muted-foreground">–</span>
                                       <Input
-                                        type="number"
-                                        min={0}
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         className="w-14 text-center"
                                         placeholder="0"
                                         value={input?.away ?? (match.awayScore?.toString() ?? "")}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
+                                          const val = e.target.value.replace(/\D/g, "");
                                           setScoreInputs((prev) => ({
                                             ...prev,
-                                            [match.id]: { away: e.target.value, home: prev[match.id]?.home ?? match.homeScore?.toString() ?? "" },
-                                          }))
-                                        }
+                                            [match.id]: { away: val, home: prev[match.id]?.home ?? match.homeScore?.toString() ?? "" },
+                                          }));
+                                        }}
                                       />
                                     </div>
                                   )}
