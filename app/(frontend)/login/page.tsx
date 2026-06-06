@@ -29,10 +29,13 @@ export default function LoginPage() {
       const res = await fetch(`/api/players/me?playerName=${encodeURIComponent(name)}`);
       const data = await res.json();
 
-      if (data.hasTeam) {
-        router.replace("/dashboard");
+      if (data.exists) {
+        // Use the canonical name from DB (handles case differences)
+        setStoredPlayer({ playerName: data.player.playerName });
+        router.replace(data.hasTeam ? "/dashboard" : "/draft");
       } else {
-        router.replace("/draft");
+        // Auto-login with a stale stored name — clear it and stay on login
+        setIsLoading(false);
       }
     } catch {
       setIsLoading(false);
@@ -48,8 +51,19 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      setStoredPlayer({ playerName: trimmed });
-      await checkAndRedirect(trimmed);
+      const res = await fetch(`/api/players/me?playerName=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+
+      if (data.exists) {
+        setStoredPlayer({ playerName: data.player.playerName });
+        router.replace(data.hasTeam ? "/dashboard" : "/draft");
+      } else if (data.registrationLocked) {
+        setError("Kayıt şu an kapalı. Yöneticiyle iletişime geç.");
+        setIsSubmitting(false);
+      } else {
+        setStoredPlayer({ playerName: trimmed });
+        router.replace("/draft");
+      }
     } catch {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.");
       setIsSubmitting(false);
