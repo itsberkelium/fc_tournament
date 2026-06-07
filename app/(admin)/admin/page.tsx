@@ -69,7 +69,8 @@ export default function AdminPage() {
 
       <main className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">
         <Tabs defaultValue="players">
-          <TabsList className="w-full overflow-x-auto">
+          <div className="max-w-full overflow-x-auto">
+          <TabsList className="w-max">
             <TabsTrigger value="players">
               Oyuncular
               <Badge variant="secondary" className="ml-2 text-xs">{playerCount}</Badge>
@@ -83,6 +84,7 @@ export default function AdminPage() {
             <TabsTrigger value="matches">Maçlar</TabsTrigger>
             <TabsTrigger value="playoffs">Playoff</TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="players" className="space-y-4">
             {password && (
