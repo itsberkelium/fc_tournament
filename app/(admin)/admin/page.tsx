@@ -54,7 +54,7 @@ export default function AdminPage() {
 
       <main className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">
         <Tabs defaultValue="players">
-          <div className="max-w-full overflow-x-auto">
+          <div className="w-full overflow-x-auto overflow-y-hidden touch-pan-x py-px -my-px">
             <TabsList className="w-max">
               <TabsTrigger value="players">
                 Oyuncular
