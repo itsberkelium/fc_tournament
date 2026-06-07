@@ -120,7 +120,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
               className="text-xs"
             >
               {!isThirdPlace && round === bracket.totalRounds ? "🏆 " : ""}
-              {isThirdPlace ? "3. " : ""}Galip: {match.winnerId === match.homePlayer?.id ? match.homePlayer?.playerName : match.awayPlayer?.playerName}
+              {isThirdPlace ? "3. Takım: " : "Galip: "}{match.winnerId === match.homePlayer?.id ? match.homePlayer?.playerName : match.awayPlayer?.playerName}
             </Badge>
           </div>
         )}

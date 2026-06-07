@@ -190,7 +190,7 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
         {match.isCompleted && match.winnerId && (
           <div className="text-center">
             <Badge variant={isThirdPlace ? "secondary" : "default"} className="text-xs">
-              {isThirdPlace ? "3. " : ""}Galip: {match.winnerId === match.homePlayer?.id ? match.homePlayer?.playerName : match.awayPlayer?.playerName}
+              {isThirdPlace ? "3. Takım: " : "Galip: "}{match.winnerId === match.homePlayer?.id ? match.homePlayer?.playerName : match.awayPlayer?.playerName}
             </Badge>
           </div>
         )}
