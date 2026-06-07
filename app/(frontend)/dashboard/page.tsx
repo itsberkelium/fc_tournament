@@ -7,8 +7,8 @@ import { DashboardClient } from "@/components/dashboard/dashboard-client";
 export default async function DashboardPage() {
   const [players, completedMatches, matchCount, settingsRows] = await Promise.all([
     db.player.findMany(),
-    db.match.findMany({ where: { isCompleted: true } }),
-    db.match.count(),
+    (db.match as any).findMany({ where: { isCompleted: true, isPlayoff: false } }),
+    (db.match as any).count({ where: { isPlayoff: false } }),
     db.settings.findMany(),
   ]);
 
@@ -16,6 +16,7 @@ export default async function DashboardPage() {
   for (const row of settingsRows) settings[row.key] = row.value;
 
   const tournamentStarted = matchCount > 0;
+  const playoffEnabled = settings.playoffEnabled === "true";
   const standings = computeStandings(players, completedMatches);
 
   return (
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
       initialStandings={standings}
       tournamentName={settings.tournamentName}
       tournamentStarted={tournamentStarted}
+      playoffEnabled={playoffEnabled}
     />
   );
 }

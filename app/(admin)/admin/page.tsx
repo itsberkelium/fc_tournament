@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlayersTab } from "@/components/admin/players-tab";
 import { TeamsTab } from "@/components/admin/teams-tab";
 import { MatchesTab } from "@/components/admin/matches-tab";
+import { PlayoffsTab } from "@/components/admin/playoffs-tab";
 import { getAdminSession, getAdminPassword, clearAdminSession } from "@/lib/admin-auth";
 
 export default function AdminPage() {
@@ -80,6 +81,7 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="matches">Maçlar</TabsTrigger>
+            <TabsTrigger value="playoffs">Playoff</TabsTrigger>
           </TabsList>
 
           <TabsContent value="players" className="space-y-4">
@@ -103,6 +105,10 @@ export default function AdminPage() {
             {password && (
               <MatchesTab password={password} tournamentStarted={tournamentStarted} />
             )}
+          </TabsContent>
+
+          <TabsContent value="playoffs" className="space-y-4">
+            {password && <PlayoffsTab password={password} />}
           </TabsContent>
         </Tabs>
       </main>

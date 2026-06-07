@@ -22,6 +22,7 @@ export default async function FixturesPage() {
     <FixturesClient
       initialMatches={matches}
       tournamentName={settings.tournamentName}
+      playoffEnabled={settings.playoffEnabled === "true"}
     />
   );
 }
