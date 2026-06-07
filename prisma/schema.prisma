@@ -28,6 +28,8 @@ model Match {
   awayScore    Int?
   round        Int // e.g., 1 for Quarter-finals, 2 for Semis, 3 for Final
   isCompleted  Boolean  @default(false)
+  isPlayoff    Boolean  @default(false)
+  bracketSlot  Int?
   createdAt    DateTime @default(now())
 
   // Define relationships

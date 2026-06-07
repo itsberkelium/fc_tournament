@@ -13,9 +13,10 @@ type ScoreInput = { home: string; away: string };
 type FixturesClientProps = {
   initialMatches: Match[];
   tournamentName: string;
+  playoffEnabled: boolean;
 };
 
-export function FixturesClient({ initialMatches, tournamentName }: FixturesClientProps) {
+export function FixturesClient({ initialMatches, tournamentName, playoffEnabled }: FixturesClientProps) {
   const [matches, setMatches] = useState(initialMatches);
   const [currentPlayerName, setCurrentPlayerName] = useState<string | undefined>();
   const [scoreInputs, setScoreInputs] = useState<Record<string, ScoreInput>>({});
@@ -111,7 +112,7 @@ export function FixturesClient({ initialMatches, tournamentName }: FixturesClien
         tournamentName={tournamentName}
         onPlayerLoaded={(p) => setCurrentPlayerName(p.playerName)}
       />
-      <PageNav active="fixtures" />
+      <PageNav active="fixtures" showPlayoffs={playoffEnabled} />
 
       <main className="flex flex-1 flex-col max-w-2xl w-full mx-auto">
         {!tournamentStarted ? (

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PlayoffsTab } from "@/components/admin/playoffs-tab";
 
 type Match = {
   id: string;
@@ -22,6 +23,7 @@ type MatchesTabProps = {
 };
 
 export function MatchesTab({ password, tournamentStarted }: MatchesTabProps) {
+  const [view, setView] = useState<"league" | "playoff">("league");
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({});
@@ -67,11 +69,30 @@ export function MatchesTab({ password, tournamentStarted }: MatchesTabProps) {
     }
   }
 
+  const toggle = (
+    <div className="flex gap-1 w-fit rounded-md border border-border p-1">
+      <Button size="sm" variant={view === "league" ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => setView("league")}>Lig</Button>
+      <Button size="sm" variant={view === "playoff" ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => setView("playoff")}>Playoff</Button>
+    </div>
+  );
+
+  if (view === "playoff") {
+    return (
+      <div className="space-y-4">
+        {toggle}
+        <PlayoffsTab password={password} />
+      </div>
+    );
+  }
+
   if (!tournamentStarted) {
     return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        Maçları görmek için önce turnuvayı başlat.
-      </p>
+      <div className="space-y-4">
+        {toggle}
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          Maçları görmek için önce turnuvayı başlat.
+        </p>
+      </div>
     );
   }
 
@@ -81,6 +102,7 @@ export function MatchesTab({ password, tournamentStarted }: MatchesTabProps) {
 
   return (
     <div className="space-y-6">
+      {toggle}
       {matchdays.map((day) => {
         const dayMatches = matches.filter((m) => m.round === day);
         const allDone = dayMatches.every((m) => m.isCompleted);

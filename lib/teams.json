@@ -50,7 +50,7 @@
   { "id": "tunisia", "name": "Tunus", "flag": "tn", "rating": 71, "attack": 70, "midfield": 72, "defence": 72, "stars": 2.5 },
   { "id": "turkiye", "name": "Türkiye", "flag": "tr", "rating": 79, "attack": 79, "midfield": 80, "defence": 78, "stars": 4 },
   { "id": "ukraine", "name": "Ukrayna", "flag": "ua", "rating": 77, "attack": 79, "midfield": 76, "defence": 76, "stars": 3.5 },
-  { "id": "united-states", "name": "Amerika Birleşik Devletleri", "flag": "us", "rating": 77, "attack": 77, "midfield": 79, "defence": 77, "stars": 3.5 },
+  { "id": "united-states", "name": "ABD", "flag": "us", "rating": 77, "attack": 77, "midfield": 79, "defence": 77, "stars": 3.5 },
   { "id": "uruguay", "name": "Uruguay", "flag": "uy", "rating": 79, "attack": 78, "midfield": 79, "defence": 79, "stars": 4 },
   { "id": "uzbekistan", "name": "Özbekistan", "flag": "uz", "rating": 68, "attack": 70, "midfield": 67, "defence": 71, "stars": 2 },
   { "id": "wales", "name": "Galler", "flag": "gb-wls", "rating": 75, "attack": 74, "midfield": 76, "defence": 74, "stars": 3 }

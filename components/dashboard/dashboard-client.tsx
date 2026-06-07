@@ -10,9 +10,10 @@ type DashboardClientProps = {
   initialStandings: StandingRow[];
   tournamentName: string;
   tournamentStarted: boolean;
+  playoffEnabled: boolean;
 };
 
-export function DashboardClient({ initialStandings, tournamentName, tournamentStarted }: DashboardClientProps) {
+export function DashboardClient({ initialStandings, tournamentName, tournamentStarted, playoffEnabled }: DashboardClientProps) {
   const [standings, setStandings] = useState(initialStandings);
   const [currentPlayerName, setCurrentPlayerName] = useState<string | undefined>();
 
@@ -34,7 +35,7 @@ export function DashboardClient({ initialStandings, tournamentName, tournamentSt
         tournamentName={tournamentName}
         onPlayerLoaded={(p) => setCurrentPlayerName(p.playerName)}
       />
-      <PageNav active="dashboard" />
+      <PageNav active="dashboard" showPlayoffs={playoffEnabled} />
 
       <main className="flex flex-1 flex-col p-6 max-w-4xl w-full mx-auto space-y-4">
         <div className="flex items-center justify-between">

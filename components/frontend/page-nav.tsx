@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 type PageNavProps = {
-  active: "dashboard" | "fixtures";
+  active: "dashboard" | "fixtures" | "playoffs";
+  showPlayoffs?: boolean;
 };
 
-export function PageNav({ active }: PageNavProps) {
+export function PageNav({ active, showPlayoffs }: PageNavProps) {
   return (
     <nav className="flex gap-1 border-b border-border px-6">
       <Link
@@ -27,6 +28,18 @@ export function PageNav({ active }: PageNavProps) {
       >
         Fikstür
       </Link>
+      {showPlayoffs && (
+        <Link
+          href="/playoffs"
+          className={`px-3 py-2.5 text-sm transition-colors ${
+            active === "playoffs"
+              ? "font-medium border-b-2 border-primary text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Playoff
+        </Link>
+      )}
     </nav>
   );
 }
