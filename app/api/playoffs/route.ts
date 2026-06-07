@@ -60,10 +60,8 @@ export async function GET() {
             : null,
         });
       } else {
-        // Placeholder — only meaningful for round 1 using standings
         const homeSeed = r === 1 ? seeds[slot] ?? null : null;
         const awaySeed = r === 1 ? seeds[teamCount - 1 - slot] ?? null : null;
-
         matches.push({
           slot,
           id: null,
@@ -82,12 +80,43 @@ export async function GET() {
     rounds.push({ round: r, label, matches });
   }
 
+  // 3rd place match (bracketSlot = -1, same round as final)
+  let thirdPlaceMatch = null;
+  if (totalRounds >= 2) {
+    const dbThird = (playoffMatches as any[]).find((m: any) => m.round === totalRounds && m.bracketSlot === -1);
+    if (dbThird) {
+      thirdPlaceMatch = {
+        id: dbThird.id,
+        homePlayer: dbThird.homePlayer,
+        awayPlayer: dbThird.awayPlayer,
+        homeScore: dbThird.homeScore,
+        awayScore: dbThird.awayScore,
+        isCompleted: dbThird.isCompleted,
+        isPlaceholder: false,
+        winnerId: dbThird.isCompleted
+          ? (dbThird.homeScore >= dbThird.awayScore ? dbThird.homePlayerId : dbThird.awayPlayerId)
+          : null,
+      };
+    } else if (playoffStarted) {
+      thirdPlaceMatch = {
+        id: null,
+        homePlayer: null,
+        awayPlayer: null,
+        homeScore: null,
+        awayScore: null,
+        isCompleted: false,
+        isPlaceholder: true,
+        winnerId: null,
+      };
+    }
+  }
+
   return NextResponse.json({
     enabled,
     teamCount,
     leagueComplete,
     playoffStarted,
     standings: seeds,
-    bracket: { totalRounds, rounds },
+    bracket: { totalRounds, rounds, thirdPlaceMatch },
   });
 }

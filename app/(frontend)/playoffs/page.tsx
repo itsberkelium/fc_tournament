@@ -81,13 +81,46 @@ export default async function PlayoffsPage() {
     rounds.push({ round: r, label, matches });
   }
 
+  // 3rd place match (bracketSlot = -1, same round as final)
+  let thirdPlaceMatch = null;
+  if (totalRounds >= 2) {
+    const dbThird = (playoffMatches as any[]).find((m: any) => m.round === totalRounds && m.bracketSlot === -1);
+    if (dbThird) {
+      thirdPlaceMatch = {
+        id: dbThird.id,
+        homePlayer: dbThird.homePlayer,
+        awayPlayer: dbThird.awayPlayer,
+        homeScore: dbThird.homeScore,
+        awayScore: dbThird.awayScore,
+        isCompleted: dbThird.isCompleted,
+        isPlaceholder: false,
+        leagueNotDone: false,
+        winnerId: dbThird.isCompleted
+          ? (dbThird.homeScore >= dbThird.awayScore ? dbThird.homePlayerId : dbThird.awayPlayerId)
+          : null,
+      };
+    } else if (playoffStarted) {
+      thirdPlaceMatch = {
+        id: null,
+        homePlayer: null,
+        awayPlayer: null,
+        homeScore: null,
+        awayScore: null,
+        isCompleted: false,
+        isPlaceholder: true,
+        leagueNotDone: false,
+        winnerId: null,
+      };
+    }
+  }
+
   return (
     <PlayoffsClient
       tournamentName={settings.tournamentName}
       teamCount={teamCount}
       leagueComplete={leagueComplete}
       playoffStarted={playoffStarted}
-      bracket={{ totalRounds, rounds }}
+      bracket={{ totalRounds, rounds, thirdPlaceMatch }}
     />
   );
 }
