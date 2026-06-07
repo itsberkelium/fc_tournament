@@ -3,24 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAdminStore } from "@/lib/stores/admin-store";
+import { adminApi } from "@/lib/api";
 
-type RegistrationLockSectionProps = {
-  initialLocked: boolean;
-  password: string;
-};
-
-export function RegistrationLockSection({ initialLocked, password }: RegistrationLockSectionProps) {
+export function RegistrationLockSection({ initialLocked }: { initialLocked: boolean }) {
+  const { password } = useAdminStore();
   const [locked, setLocked] = useState(initialLocked);
   const [saving, setSaving] = useState(false);
 
   async function handleToggle() {
     setSaving(true);
     const next = !locked;
-    await fetch("/api/admin/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
-      body: JSON.stringify({ registrationLocked: String(next) }),
-    });
+    await adminApi.updateSettings({ registrationLocked: String(next) }, password);
     setLocked(next);
     setSaving(false);
   }
@@ -35,12 +29,7 @@ export function RegistrationLockSection({ initialLocked, password }: Registratio
         <Badge variant={locked ? "destructive" : "secondary"}>
           {locked ? "Kayıt Kapalı" : "Kayıt Açık"}
         </Badge>
-        <Button
-          size="sm"
-          variant={locked ? "outline" : "destructive"}
-          onClick={handleToggle}
-          disabled={saving}
-        >
+        <Button size="sm" variant={locked ? "outline" : "destructive"} onClick={handleToggle} disabled={saving}>
           {saving ? "..." : locked ? "Kaydı Aç" : "Kaydı Kapat"}
         </Button>
       </div>

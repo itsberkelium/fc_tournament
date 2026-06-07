@@ -1,58 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getStoredPlayer, clearStoredPlayer } from "@/lib/player-storage";
+import { usePlayerStore } from "@/lib/stores/player-store";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
 
 const ALL_TEAMS = teams as Team[];
 
-type PlayerInfo = {
-  playerName: string;
-  teamName: string;
-  teamId: string;
-};
-
-type PageHeaderProps = {
-  tournamentName: string;
-  onPlayerLoaded?: (player: PlayerInfo) => void;
-};
-
-export function PageHeader({ tournamentName, onPlayerLoaded }: PageHeaderProps) {
+export function PageHeader({ tournamentName }: { tournamentName: string }) {
   const router = useRouter();
-  const [player, setPlayer] = useState<PlayerInfo | null>(null);
+  const { player, loadPlayer, clearPlayer } = usePlayerStore();
 
   useEffect(() => {
-    const stored = getStoredPlayer();
-    if (!stored) {
-      router.replace("/login");
-      return;
-    }
-
-    fetch(`/api/players/me?playerName=${encodeURIComponent(stored.playerName)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.exists || !data.hasTeam) {
-          clearStoredPlayer();
-          router.replace("/login");
-          return;
-        }
-        const info: PlayerInfo = {
-          playerName: data.player.playerName,
-          teamName: data.player.teamName,
-          teamId: data.player.teamId,
-        };
-        setPlayer(info);
-        onPlayerLoaded?.(info);
-      })
-      .catch(() => {
-        clearStoredPlayer();
-        router.replace("/login");
-      });
-  }, [router, onPlayerLoaded]);
+    loadPlayer(router);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const teamFlag = player ? ALL_TEAMS.find((t) => t.id === player.teamId)?.flag : null;
 
@@ -66,7 +31,7 @@ export function PageHeader({ tournamentName, onPlayerLoaded }: PageHeaderProps) 
             variant="ghost"
             size="sm"
             className="text-xs text-muted-foreground"
-            onClick={() => { clearStoredPlayer(); router.replace("/login"); }}
+            onClick={() => clearPlayer(router)}
           >
             Kullanıcı Değiştir
           </Button>

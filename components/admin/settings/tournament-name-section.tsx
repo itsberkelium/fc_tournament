@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAdminStore } from "@/lib/stores/admin-store";
+import { adminApi } from "@/lib/api";
 
-type TournamentNameSectionProps = {
-  initialName: string;
-  password: string;
-};
-
-export function TournamentNameSection({ initialName, password }: TournamentNameSectionProps) {
+export function TournamentNameSection({ initialName }: { initialName: string }) {
+  const { password } = useAdminStore();
   const [name, setName] = useState(initialName);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -17,11 +15,7 @@ export function TournamentNameSection({ initialName, password }: TournamentNameS
   async function handleSave() {
     setSaving(true);
     setSuccess(false);
-    await fetch("/api/admin/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
-      body: JSON.stringify({ tournamentName: name }),
-    });
+    await adminApi.updateSettings({ tournamentName: name }, password);
     setSaving(false);
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2000);

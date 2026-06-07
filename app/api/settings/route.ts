@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
-import db from "@/lib/db";
+import { getSettings } from "@/lib/settings";
 
 export async function GET() {
-  const rows = await db.settings.findMany();
-  const settings: Record<string, string> = {
-    tournamentName: "EA FC 26 Ligi",
-    registrationLocked: "false",
-  };
-  for (const row of rows) settings[row.key] = row.value;
+  const settings = await getSettings({ registrationLocked: "false" });
   return NextResponse.json({ settings });
 }

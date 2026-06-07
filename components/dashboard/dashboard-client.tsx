@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { LeaderboardTable } from "@/components/dashboard/leaderboard-table";
+import { usePlayerStore } from "@/lib/stores/player-store";
+import { publicApi } from "@/lib/api";
 import type { StandingRow } from "@/lib/standings";
 
 type DashboardClientProps = {
@@ -15,11 +17,10 @@ type DashboardClientProps = {
 
 export function DashboardClient({ initialStandings, tournamentName, tournamentStarted, playoffEnabled }: DashboardClientProps) {
   const [standings, setStandings] = useState(initialStandings);
-  const [currentPlayerName, setCurrentPlayerName] = useState<string | undefined>();
+  const { player } = usePlayerStore();
 
   const refreshStandings = useCallback(async () => {
-    const res = await fetch("/api/leaderboard");
-    const data = await res.json();
+    const data = await publicApi.getLeaderboard();
     setStandings(data.standings ?? []);
   }, []);
 
@@ -31,10 +32,7 @@ export function DashboardClient({ initialStandings, tournamentName, tournamentSt
 
   return (
     <div className="flex flex-1 flex-col">
-      <PageHeader
-        tournamentName={tournamentName}
-        onPlayerLoaded={(p) => setCurrentPlayerName(p.playerName)}
-      />
+      <PageHeader tournamentName={tournamentName} />
       <PageNav active="dashboard" showPlayoffs={playoffEnabled} />
 
       <main className="flex flex-1 flex-col p-6 max-w-4xl w-full mx-auto space-y-4">
@@ -54,7 +52,7 @@ export function DashboardClient({ initialStandings, tournamentName, tournamentSt
             </p>
           </div>
         ) : (
-          <LeaderboardTable standings={standings} currentPlayerName={currentPlayerName} />
+          <LeaderboardTable standings={standings} currentPlayerName={player?.playerName} />
         )}
       </main>
     </div>

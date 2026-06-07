@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Flag } from "@/components/flag";
+import { useAdminStore } from "@/lib/stores/admin-store";
+import { adminApi, publicApi } from "@/lib/api";
 import { getFeederLabel, getThirdPlaceFeederLabel } from "@/lib/playoffs";
 
 type MatchPlayer = { id: string; playerName: string; teamId: string; teamName: string };
@@ -37,9 +39,8 @@ type PlayoffData = {
   };
 };
 
-type PlayoffsTabProps = { password: string };
-
-export function PlayoffsTab({ password }: PlayoffsTabProps) {
+export function PlayoffsTab() {
+  const { password } = useAdminStore();
   const [data, setData] = useState<PlayoffData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
@@ -47,16 +48,8 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
   const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  const authHeaders = useCallback(
-    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${password}` }),
-    [password]
-  );
-
   const load = useCallback(() => {
-    fetch("/api/playoffs")
-      .then((r) => r.json())
-      .then(setData)
-      .finally(() => setIsLoading(false));
+    publicApi.getPlayoffs().then(setData).finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => { if (password) load(); }, [password, load]);
@@ -64,7 +57,7 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
   async function handleStart() {
     setIsStarting(true);
     setError(null);
-    const res = await fetch("/api/admin/tournament/playoffs/start", { method: "POST", headers: authHeaders() });
+    const res = await adminApi.startPlayoffs(password);
     const json = await res.json();
     if (!res.ok) setError(json.message);
     else load();
@@ -75,11 +68,7 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
     const input = scoreInputs[matchId];
     if (!input?.home || !input?.away) return;
     setSavingId(matchId);
-    const res = await fetch(`/api/admin/matches/${matchId}`, {
-      method: "PATCH",
-      headers: authHeaders(),
-      body: JSON.stringify({ homeScore: input.home, awayScore: input.away }),
-    });
+    const res = await adminApi.saveMatchScore(matchId, { homeScore: Number(input.home), awayScore: Number(input.away) }, password);
     if (res.ok) {
       setScoreInputs((prev) => { const next = { ...prev }; delete next[matchId]; return next; });
       load();
@@ -112,7 +101,6 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
     return (
       <div key={keyStr} className="rounded-md border border-border p-3 space-y-2">
         <div className="flex items-center gap-2">
-          {/* Home */}
           <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
             <div className="text-right min-w-0">
               {match.homePlayer ? (
@@ -129,7 +117,6 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
             )}
           </div>
 
-          {/* Score */}
           <div className="shrink-0 w-24 text-center">
             {isEditing ? (
               <div className="flex items-center gap-1 justify-center">
@@ -146,7 +133,6 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
             )}
           </div>
 
-          {/* Away */}
           <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
             {match.awayPlayer && (
               <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
@@ -164,7 +150,6 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
           </div>
         </div>
 
-        {/* Admin score controls */}
         {match.id && (
           <div className="flex justify-center gap-2">
             {isEditing ? (
@@ -186,7 +171,6 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
           </div>
         )}
 
-        {/* Winner badge */}
         {match.isCompleted && match.winnerId && (
           <div className="text-center">
             <Badge variant={isThirdPlace ? "secondary" : "default"} className="text-xs">
@@ -227,7 +211,6 @@ export function PlayoffsTab({ password }: PlayoffsTabProps) {
             </div>
           </div>
 
-          {/* 3rd place match — after semi-finals, before the final */}
           {round === bracket.totalRounds - 1 && bracket.thirdPlaceMatch && (
             <div className="space-y-3 mt-6">
               <h3 className="text-sm font-semibold">3. Yer Maçı</h3>

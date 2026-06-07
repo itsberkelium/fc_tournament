@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,38 +9,34 @@ import { TournamentNameSection } from "@/components/admin/settings/tournament-na
 import { RegistrationLockSection } from "@/components/admin/settings/registration-lock-section";
 import { ExportSection } from "@/components/admin/settings/export-section";
 import { ResetSection } from "@/components/admin/settings/reset-section";
-import { getAdminSession, getAdminPassword, clearAdminSession } from "@/lib/admin-auth";
+import { getAdminSession, clearAdminSession } from "@/lib/admin-auth";
+import { useAdminStore } from "@/lib/stores/admin-store";
 
 export default function AdminSettingsPage() {
   const router = useRouter();
-  const [password, setPassword] = useState("");
+  const { init, password } = useAdminStore();
   const [isLoading, setIsLoading] = useState(true);
   const [tournamentName, setTournamentName] = useState("EA FC 26 Ligi");
   const [registrationLocked, setRegistrationLocked] = useState(false);
-
-  const authHeaders = useCallback(
-    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${password}` }),
-    [password]
-  );
 
   useEffect(() => {
     if (!getAdminSession()) {
       router.replace("/admin/login");
       return;
     }
-    setPassword(getAdminPassword());
-  }, [router]);
+    init();
+  }, [router, init]);
 
   useEffect(() => {
     if (!password) return;
-    fetch("/api/admin/settings", { headers: authHeaders() })
+    fetch("/api/admin/settings", { headers: { Authorization: `Bearer ${password}` } })
       .then((r) => r.json())
       .then(({ settings }) => {
         setTournamentName(settings.tournamentName ?? "EA FC 26 Ligi");
         setRegistrationLocked(settings.registrationLocked === "true");
       })
       .finally(() => setIsLoading(false));
-  }, [password, authHeaders]);
+  }, [password]);
 
   function handleLogout() {
     clearAdminSession();
@@ -71,13 +67,13 @@ export default function AdminSettingsPage() {
       </header>
 
       <main className="flex-1 p-6 max-w-xl mx-auto w-full space-y-8">
-        <TournamentNameSection initialName={tournamentName} password={password} />
+        <TournamentNameSection initialName={tournamentName} />
         <Separator />
-        <RegistrationLockSection initialLocked={registrationLocked} password={password} />
+        <RegistrationLockSection initialLocked={registrationLocked} />
         <Separator />
         <ExportSection tournamentName={tournamentName} />
         <Separator />
-        <ResetSection password={password} />
+        <ResetSection />
       </main>
     </div>
   );
