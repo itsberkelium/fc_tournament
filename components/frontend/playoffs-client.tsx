@@ -68,7 +68,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
                       {/* Home */}
                       <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
                         <div className="text-right min-w-0">
-                          {match.homePlayer ? (
+                          {match.homePlayer && !match.isPlaceholder ? (
                             <>
                               <p className={`text-sm leading-none truncate ${homeIsWinner ? "font-bold" : ""} ${match.isCompleted && !homeIsWinner ? "opacity-50" : ""}`}>
                                 {match.homePlayer.teamName}
@@ -81,7 +81,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
                             </p>
                           )}
                         </div>
-                        {match.homePlayer && (
+                        {match.homePlayer && !match.isPlaceholder && (
                           <Flag teamId={match.homePlayer.teamId} teamName={match.homePlayer.teamName} />
                         )}
                       </div>
@@ -99,11 +99,11 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
 
                       {/* Away */}
                       <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
-                        {match.awayPlayer && (
+                        {match.awayPlayer && !match.isPlaceholder && (
                           <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
                         )}
                         <div className="min-w-0">
-                          {match.awayPlayer ? (
+                          {match.awayPlayer && !match.isPlaceholder ? (
                             <>
                               <p className={`text-sm leading-none truncate ${awayIsWinner ? "font-bold" : ""} ${match.isCompleted && !awayIsWinner ? "opacity-50" : ""}`}>
                                 {match.awayPlayer.teamName}
