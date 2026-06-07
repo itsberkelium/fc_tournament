@@ -15,7 +15,7 @@ jobs:
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_PASS }}
+          password: ${{ secrets.HETZNER_PASS }}
           script: |
             cd ${{ secrets.APP_DIR }}
             ./deploy.sh
