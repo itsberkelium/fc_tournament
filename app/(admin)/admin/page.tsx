@@ -69,7 +69,7 @@ export default function AdminPage() {
 
       <main className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">
         <Tabs defaultValue="players">
-          <TabsList>
+          <TabsList className="w-full overflow-x-auto">
             <TabsTrigger value="players">
               Oyuncular
               <Badge variant="secondary" className="ml-2 text-xs">{playerCount}</Badge>
