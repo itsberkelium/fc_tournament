@@ -87,6 +87,7 @@ export default async function PlayoffsPage() {
     const dbThird = (playoffMatches as any[]).find((m: any) => m.round === totalRounds && m.bracketSlot === -1);
     if (dbThird) {
       thirdPlaceMatch = {
+        slot: -1,
         id: dbThird.id,
         homePlayer: dbThird.homePlayer,
         awayPlayer: dbThird.awayPlayer,
@@ -101,6 +102,7 @@ export default async function PlayoffsPage() {
       };
     } else if (playoffStarted) {
       thirdPlaceMatch = {
+        slot: -1,
         id: null,
         homePlayer: null,
         awayPlayer: null,
