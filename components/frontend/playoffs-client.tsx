@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePlayerStore } from "@/lib/stores/player-store";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
@@ -37,7 +37,8 @@ type PlayoffsClientProps = {
 };
 
 export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, playoffStarted, bracket }: PlayoffsClientProps) {
-  const [currentPlayerName, setCurrentPlayerName] = useState<string | undefined>();
+  const { player } = usePlayerStore();
+  const currentPlayerName = player?.playerName;
 
   function renderMatchCard(match: BracketMatch, round: number, keyStr: string, isThirdPlace = false) {
     const isMyMatch = !!currentPlayerName && (
@@ -130,7 +131,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
 
   return (
     <div className="flex flex-1 flex-col">
-      <PageHeader tournamentName={tournamentName} onPlayerLoaded={(p) => setCurrentPlayerName(p.playerName)} />
+      <PageHeader tournamentName={tournamentName} />
       <PageNav active="playoffs" showPlayoffs />
 
       <main className="flex flex-1 flex-col max-w-2xl w-full mx-auto px-6 py-6 space-y-6">

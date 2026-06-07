@@ -14,6 +14,7 @@ import {
   setDraftState,
   clearDraftState,
 } from "@/lib/player-storage";
+import { playerApi, adminApi } from "@/lib/api";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
 
@@ -44,8 +45,8 @@ export default function DraftPage() {
     }
 
     Promise.all([
-      fetch("/api/players/claimed-teams").then((r) => r.json()),
-      fetch("/api/admin/tournament/status").then((r) => r.json()),
+      playerApi.getClaimedTeams(),
+      adminApi.getTournamentStatus(),
     ])
       .then(([claimedData, statusData]) => {
         const claimed: string[] = claimedData.claimedTeamIds ?? [];
@@ -89,11 +90,7 @@ export default function DraftPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/players/lock-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerName, teamId: currentTeam.id }),
-      });
+      const res = await playerApi.lockIn(playerName, currentTeam.id);
 
       if (res.ok) {
         clearDraftState();

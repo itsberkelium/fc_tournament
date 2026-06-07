@@ -4,12 +4,11 @@ import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import { computeStandings } from "@/lib/standings";
 import { getTotalRounds, getRoundLabel } from "@/lib/playoffs";
+import { getSettings } from "@/lib/settings";
 import { PlayoffsClient } from "@/components/frontend/playoffs-client";
 
 export default async function PlayoffsPage() {
-  const settingsRows = await db.settings.findMany();
-  const settings: Record<string, string> = { tournamentName: "EA FC 26 Ligi" };
-  for (const row of settingsRows) settings[row.key] = row.value;
+  const settings = await getSettings();
 
   if (settings.playoffEnabled !== "true") redirect("/dashboard");
 
@@ -18,9 +17,9 @@ export default async function PlayoffsPage() {
 
   const [players, leagueTotal, leagueDone, playoffMatches] = await Promise.all([
     db.player.findMany(),
-    (db.match as any).count({ where: { isPlayoff: false } }),
-    (db.match as any).count({ where: { isPlayoff: false, isCompleted: true } }),
-    (db.match as any).findMany({
+    db.match.count({ where: { isPlayoff: false } }),
+    db.match.count({ where: { isPlayoff: false, isCompleted: true } }),
+    db.match.findMany({
       where: { isPlayoff: true },
       include: {
         homePlayer: { select: { id: true, playerName: true, teamId: true, teamName: true } },
@@ -32,7 +31,7 @@ export default async function PlayoffsPage() {
   const leagueComplete = leagueTotal > 0 && leagueDone === leagueTotal;
   const playoffStarted = playoffMatches.length > 0;
 
-  const completedLeagueMatches = await (db.match as any).findMany({ where: { isPlayoff: false, isCompleted: true } });
+  const completedLeagueMatches = await db.match.findMany({ where: { isPlayoff: false, isCompleted: true } });
   const standings = computeStandings(players, completedLeagueMatches);
   const seeds = standings.slice(0, teamCount);
 
@@ -43,7 +42,7 @@ export default async function PlayoffsPage() {
     const matches = [];
 
     for (let slot = 0; slot < matchCount; slot++) {
-      const dbMatch = (playoffMatches as any[]).find((m: any) => m.round === r && m.bracketSlot === slot);
+      const dbMatch = playoffMatches.find((m) => m.round === r && m.bracketSlot === slot);
 
       if (dbMatch) {
         matches.push({
@@ -57,7 +56,7 @@ export default async function PlayoffsPage() {
           isPlaceholder: false,
           leagueNotDone: false,
           winnerId: dbMatch.isCompleted
-            ? (dbMatch.homeScore >= dbMatch.awayScore ? dbMatch.homePlayerId : dbMatch.awayPlayerId)
+            ? (dbMatch.homeScore! >= dbMatch.awayScore! ? dbMatch.homePlayerId : dbMatch.awayPlayerId)
             : null,
         });
       } else {
@@ -81,10 +80,9 @@ export default async function PlayoffsPage() {
     rounds.push({ round: r, label, matches });
   }
 
-  // 3rd place match (bracketSlot = -1, same round as final)
   let thirdPlaceMatch = null;
   if (totalRounds >= 2) {
-    const dbThird = (playoffMatches as any[]).find((m: any) => m.round === totalRounds && m.bracketSlot === -1);
+    const dbThird = playoffMatches.find((m) => m.round === totalRounds && m.bracketSlot === -1);
     if (dbThird) {
       thirdPlaceMatch = {
         slot: -1,
@@ -97,7 +95,7 @@ export default async function PlayoffsPage() {
         isPlaceholder: false,
         leagueNotDone: false,
         winnerId: dbThird.isCompleted
-          ? (dbThird.homeScore >= dbThird.awayScore ? dbThird.homePlayerId : dbThird.awayPlayerId)
+          ? (dbThird.homeScore! >= dbThird.awayScore! ? dbThird.homePlayerId : dbThird.awayPlayerId)
           : null,
       };
     } else if (playoffStarted) {

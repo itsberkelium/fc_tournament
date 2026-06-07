@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlayoffsTab } from "@/components/admin/playoffs-tab";
+import { useAdminStore } from "@/lib/stores/admin-store";
+import { adminApi } from "@/lib/api";
 
 type Match = {
   id: string;
@@ -17,41 +19,27 @@ type Match = {
   awayPlayer: { playerName: string; teamName: string };
 };
 
-type MatchesTabProps = {
-  password: string;
-  tournamentStarted: boolean;
-};
-
-export function MatchesTab({ password, tournamentStarted }: MatchesTabProps) {
+export function MatchesTab() {
+  const { password, tournamentStarted } = useAdminStore();
   const [view, setView] = useState<"league" | "playoff">("league");
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({});
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
 
-  const authHeaders = useCallback(
-    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${password}` }),
-    [password]
-  );
-
   useEffect(() => {
     if (!password || !tournamentStarted) { setIsLoading(false); return; }
-    fetch("/api/admin/matches", { headers: authHeaders() })
-      .then((r) => r.json())
+    adminApi.getMatches(password)
       .then(({ matches }) => setMatches(matches ?? []))
       .finally(() => setIsLoading(false));
-  }, [password, tournamentStarted, authHeaders]);
+  }, [password, tournamentStarted]);
 
   async function handleSaveScore(matchId: string) {
     const input = scoreInputs[matchId];
     if (!input) return;
     setSavingMatchId(matchId);
     try {
-      await fetch(`/api/admin/matches/${matchId}`, {
-        method: "PATCH",
-        headers: authHeaders(),
-        body: JSON.stringify({ homeScore: input.home, awayScore: input.away }),
-      });
+      await adminApi.saveMatchScore(matchId, { homeScore: Number(input.home), awayScore: Number(input.away) }, password);
       setMatches((prev) =>
         prev.map((m) =>
           m.id === matchId
@@ -80,7 +68,7 @@ export function MatchesTab({ password, tournamentStarted }: MatchesTabProps) {
     return (
       <div className="space-y-4">
         {toggle}
-        <PlayoffsTab password={password} />
+        <PlayoffsTab />
       </div>
     );
   }
@@ -142,34 +130,22 @@ export function MatchesTab({ password, tournamentStarted }: MatchesTabProps) {
                           ) : (
                             <div className="flex items-center justify-center gap-1">
                               <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                className="w-14 text-center"
-                                placeholder="0"
+                                type="text" inputMode="numeric" pattern="[0-9]*"
+                                className="w-14 text-center" placeholder="0"
                                 value={input?.home ?? (match.homeScore?.toString() ?? "")}
                                 onChange={(e) => {
                                   const val = e.target.value.replace(/\D/g, "");
-                                  setScoreInputs((prev) => ({
-                                    ...prev,
-                                    [match.id]: { home: val, away: prev[match.id]?.away ?? match.awayScore?.toString() ?? "" },
-                                  }));
+                                  setScoreInputs((prev) => ({ ...prev, [match.id]: { home: val, away: prev[match.id]?.away ?? match.awayScore?.toString() ?? "" } }));
                                 }}
                               />
                               <span className="text-muted-foreground">–</span>
                               <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                className="w-14 text-center"
-                                placeholder="0"
+                                type="text" inputMode="numeric" pattern="[0-9]*"
+                                className="w-14 text-center" placeholder="0"
                                 value={input?.away ?? (match.awayScore?.toString() ?? "")}
                                 onChange={(e) => {
                                   const val = e.target.value.replace(/\D/g, "");
-                                  setScoreInputs((prev) => ({
-                                    ...prev,
-                                    [match.id]: { away: val, home: prev[match.id]?.home ?? match.homeScore?.toString() ?? "" },
-                                  }));
+                                  setScoreInputs((prev) => ({ ...prev, [match.id]: { away: val, home: prev[match.id]?.home ?? match.homeScore?.toString() ?? "" } }));
                                 }}
                               />
                             </div>
@@ -178,27 +154,12 @@ export function MatchesTab({ password, tournamentStarted }: MatchesTabProps) {
                         <TableCell>
                           <div className="flex gap-2 justify-end">
                             {match.isCompleted && input === undefined ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  setScoreInputs((prev) => ({
-                                    ...prev,
-                                    [match.id]: {
-                                      home: match.homeScore?.toString() ?? "",
-                                      away: match.awayScore?.toString() ?? "",
-                                    },
-                                  }))
-                                }
-                              >
+                              <Button variant="outline" size="sm"
+                                onClick={() => setScoreInputs((prev) => ({ ...prev, [match.id]: { home: match.homeScore?.toString() ?? "", away: match.awayScore?.toString() ?? "" } }))}>
                                 Düzenle
                               </Button>
                             ) : (
-                              <Button
-                                size="sm"
-                                disabled={isSaving || !input?.home || !input?.away}
-                                onClick={() => handleSaveScore(match.id)}
-                              >
+                              <Button size="sm" disabled={isSaving || !input?.home || !input?.away} onClick={() => handleSaveScore(match.id)}>
                                 {isSaving ? "Kaydediliyor..." : "Kaydet"}
                               </Button>
                             )}

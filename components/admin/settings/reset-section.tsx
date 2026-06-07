@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAdminStore } from "@/lib/stores/admin-store";
+import { adminApi } from "@/lib/api";
 
-type ResetSectionProps = {
-  password: string;
-};
-
-export function ResetSection({ password }: ResetSectionProps) {
+export function ResetSection() {
   const router = useRouter();
+  const { password } = useAdminStore();
   const [resetInput, setResetInput] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,10 +20,7 @@ export function ResetSection({ password }: ResetSectionProps) {
     setIsResetting(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/tournament", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
-      });
+      const res = await adminApi.reset(password);
       if (!res.ok) {
         const data = await res.json();
         setError(data.message ?? "Bir hata oluştu.");

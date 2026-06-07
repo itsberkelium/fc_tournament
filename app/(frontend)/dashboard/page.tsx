@@ -2,18 +2,16 @@ export const dynamic = "force-dynamic";
 
 import db from "@/lib/db";
 import { computeStandings } from "@/lib/standings";
+import { getSettings } from "@/lib/settings";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 
 export default async function DashboardPage() {
-  const [players, completedMatches, matchCount, settingsRows] = await Promise.all([
+  const [players, completedMatches, matchCount, settings] = await Promise.all([
     db.player.findMany(),
-    (db.match as any).findMany({ where: { isCompleted: true, isPlayoff: false } }),
-    (db.match as any).count({ where: { isPlayoff: false } }),
-    db.settings.findMany(),
+    db.match.findMany({ where: { isCompleted: true, isPlayoff: false } }),
+    db.match.count({ where: { isPlayoff: false } }),
+    getSettings(),
   ]);
-
-  const settings: Record<string, string> = { tournamentName: "EA FC 26 Ligi" };
-  for (const row of settingsRows) settings[row.key] = row.value;
 
   const tournamentStarted = matchCount > 0;
   const playoffEnabled = settings.playoffEnabled === "true";

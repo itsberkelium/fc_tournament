@@ -8,7 +8,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { id } = await params;
 
-  await db.player.delete({ where: { id } });
-
-  return NextResponse.json({ success: true });
+  try {
+    await db.player.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    if (e?.code === "P2025") return NextResponse.json({ message: "Oyuncu bulunamadı." }, { status: 404 });
+    return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });
+  }
 }

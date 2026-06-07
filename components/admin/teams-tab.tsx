@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAdminStore } from "@/lib/stores/admin-store";
+import { adminApi } from "@/lib/api";
 import teams from "@/lib/teams.json";
 import type { Team } from "@/types/Team";
 
@@ -25,12 +27,8 @@ function SortButton({ label, field, current, dir, onSort }: {
   );
 }
 
-type TeamsTabProps = {
-  password: string;
-  onDisabledCountChange?: (count: number) => void;
-};
-
-export function TeamsTab({ password, onDisabledCountChange }: TeamsTabProps) {
+export function TeamsTab() {
+  const { password, setDisabledTeamCount } = useAdminStore();
   const [claimedTeamIds, setClaimedTeamIds] = useState<string[]>([]);
   const [disabledTeamIds, setDisabledTeamIds] = useState<string[]>([]);
   const [togglingTeamId, setTogglingTeamId] = useState<string | null>(null);
@@ -39,35 +37,30 @@ export function TeamsTab({ password, onDisabledCountChange }: TeamsTabProps) {
   const [teamSort, setTeamSort] = useState<SortField>("name");
   const [teamSortDir, setTeamSortDir] = useState<"asc" | "desc">("asc");
 
-  const authHeaders = useCallback(
-    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${password}` }),
-    [password]
-  );
-
   useEffect(() => {
     if (!password) return;
-    fetch("/api/players/claimed-teams")
-      .then((r) => r.json())
+    adminApi.getClaimedTeams()
       .then(({ claimedTeamIds, disabledTeamIds }) => {
         setClaimedTeamIds(claimedTeamIds ?? []);
         const disabled = disabledTeamIds ?? [];
         setDisabledTeamIds(disabled);
-        onDisabledCountChange?.(disabled.length);
+        setDisabledTeamCount(disabled.length);
       })
       .finally(() => setIsLoading(false));
-  }, [password]);
+  }, [password, setDisabledTeamCount]);
 
   async function handleToggleTeam(teamId: string) {
     setTogglingTeamId(teamId);
     const isDisabled = disabledTeamIds.includes(teamId);
     try {
-      await fetch(`/api/admin/teams/${teamId}`, {
-        method: isDisabled ? "DELETE" : "POST",
-        headers: authHeaders(),
-      });
+      if (isDisabled) {
+        await adminApi.enableTeam(teamId, password);
+      } else {
+        await adminApi.disableTeam(teamId, password);
+      }
       setDisabledTeamIds((prev) => {
         const next = isDisabled ? prev.filter((id) => id !== teamId) : [...prev, teamId];
-        onDisabledCountChange?.(next.length);
+        setDisabledTeamCount(next.length);
         return next;
       });
     } finally {

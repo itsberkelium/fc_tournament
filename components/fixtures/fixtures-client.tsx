@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { FixtureToolbar } from "@/components/fixtures/fixture-toolbar";
 import { MatchdaySection } from "@/components/fixtures/matchday-section";
+import { usePlayerStore } from "@/lib/stores/player-store";
+import { playerApi } from "@/lib/api";
 import type { Match } from "@/components/fixtures/match-card";
 
 type ScoreInput = { home: string; away: string };
@@ -18,11 +20,12 @@ type FixturesClientProps = {
 
 export function FixturesClient({ initialMatches, tournamentName, playoffEnabled }: FixturesClientProps) {
   const [matches, setMatches] = useState(initialMatches);
-  const [currentPlayerName, setCurrentPlayerName] = useState<string | undefined>();
   const [scoreInputs, setScoreInputs] = useState<Record<string, ScoreInput>>({});
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"day" | "all">("day");
   const [myMatchesOnly, setMyMatchesOnly] = useState(false);
+  const { player } = usePlayerStore();
+  const currentPlayerName = player?.playerName;
 
   const matchdays = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
 
@@ -58,14 +61,10 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
 
     setSavingMatchId(matchId);
     try {
-      const res = await fetch(`/api/matches/${matchId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          playerName: currentPlayerName,
-          homeScore: Number(input.home),
-          awayScore: Number(input.away),
-        }),
+      const res = await playerApi.submitMatchScore(matchId, {
+        playerName: currentPlayerName,
+        homeScore: Number(input.home),
+        awayScore: Number(input.away),
       });
       if (res.ok) {
         setMatches((prev) =>
@@ -108,10 +107,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
 
   return (
     <div className="flex flex-1 flex-col">
-      <PageHeader
-        tournamentName={tournamentName}
-        onPlayerLoaded={(p) => setCurrentPlayerName(p.playerName)}
-      />
+      <PageHeader tournamentName={tournamentName} />
       <PageNav active="fixtures" showPlayoffs={playoffEnabled} />
 
       <main className="flex flex-1 flex-col max-w-2xl w-full mx-auto">
@@ -128,7 +124,6 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
               onMyMatchesToggle={() => setMyMatchesOnly((v) => !v)}
             />
 
-            {/* Day navigator */}
             {viewMode === "day" && (
               <div className="flex items-center justify-between px-6 py-3 border-b border-border">
                 <button
@@ -158,7 +153,6 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
               </div>
             )}
 
-            {/* Match list */}
             <div className="flex flex-col px-6 py-4 space-y-6">
               {(viewMode === "day" ? [activeDay] : matchdays).map((day) => {
                 const dayAllMatches = matches.filter((m) => m.round === day);

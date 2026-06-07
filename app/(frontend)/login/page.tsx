@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getStoredPlayer, setStoredPlayer } from "@/lib/player-storage";
+import { playerApi } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,15 +27,11 @@ export default function LoginPage() {
 
   async function checkAndRedirect(name: string) {
     try {
-      const res = await fetch(`/api/players/me?playerName=${encodeURIComponent(name)}`);
-      const data = await res.json();
-
-      if (data.exists) {
-        // Use the canonical name from DB (handles case differences)
+      const data = await playerApi.getMe(name);
+      if (data.exists && data.player) {
         setStoredPlayer({ playerName: data.player.playerName });
         router.replace(data.hasTeam ? "/dashboard" : "/draft");
       } else {
-        // Auto-login with a stale stored name — clear it and stay on login
         setIsLoading(false);
       }
     } catch {
@@ -51,10 +48,9 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch(`/api/players/me?playerName=${encodeURIComponent(trimmed)}`);
-      const data = await res.json();
+      const data = await playerApi.getMe(trimmed);
 
-      if (data.exists) {
+      if (data.exists && data.player) {
         setStoredPlayer({ playerName: data.player.playerName });
         router.replace(data.hasTeam ? "/dashboard" : "/draft");
       } else if (data.registrationLocked) {

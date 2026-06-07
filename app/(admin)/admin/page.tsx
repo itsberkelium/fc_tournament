@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,46 +9,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlayersTab } from "@/components/admin/players-tab";
 import { TeamsTab } from "@/components/admin/teams-tab";
 import { MatchesTab } from "@/components/admin/matches-tab";
-import { getAdminSession, getAdminPassword, clearAdminSession } from "@/lib/admin-auth";
+import { getAdminSession, clearAdminSession } from "@/lib/admin-auth";
+import { useAdminStore } from "@/lib/stores/admin-store";
 
 export default function AdminPage() {
   const router = useRouter();
-  const [password, setPassword] = useState("");
-  const [tournamentStarted, setTournamentStarted] = useState(false);
-  const [playerCount, setPlayerCount] = useState(0);
-  const [disabledTeamCount, setDisabledTeamCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { init, isInitialized, playerCount, disabledTeamCount } = useAdminStore();
 
   useEffect(() => {
     if (!getAdminSession()) {
       router.replace("/admin/login");
       return;
     }
-    const pw = getAdminPassword();
-    setPassword(pw);
+    init();
+  }, [router, init]);
 
-    Promise.all([
-      fetch("/api/admin/players", { headers: { Authorization: `Bearer ${pw}` } }).then((r) => r.json()),
-      fetch("/api/admin/tournament/status").then((r) => r.json()),
-      fetch("/api/players/claimed-teams").then((r) => r.json()),
-    ]).then(([playersData, statusData, teamsData]) => {
-      setPlayerCount(playersData.players?.length ?? 0);
-      setTournamentStarted(statusData.started ?? false);
-      setDisabledTeamCount(teamsData.disabledTeamIds?.length ?? 0);
-    }).finally(() => setIsLoading(false));
-  }, [router]);
-
-  function handleLogout() {
-    clearAdminSession();
-    router.replace("/admin/login");
-  }
-
-  if (isLoading) {
+  if (!isInitialized) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
+  }
+
+  function handleLogout() {
+    clearAdminSession();
+    router.replace("/admin/login");
   }
 
   return (
@@ -69,45 +55,32 @@ export default function AdminPage() {
       <main className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">
         <Tabs defaultValue="players">
           <div className="max-w-full overflow-x-auto">
-          <TabsList className="w-max">
-            <TabsTrigger value="players">
-              Oyuncular
-              <Badge variant="secondary" className="ml-2 text-xs">{playerCount}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="teams">
-              Takımlar
-              {disabledTeamCount > 0 && (
-                <Badge variant="destructive" className="ml-2 text-xs">{disabledTeamCount} devre dışı</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="matches">Maçlar</TabsTrigger>
-          </TabsList>
+            <TabsList className="w-max">
+              <TabsTrigger value="players">
+                Oyuncular
+                <Badge variant="secondary" className="ml-2 text-xs">{playerCount}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="teams">
+                Takımlar
+                {disabledTeamCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 text-xs">{disabledTeamCount} devre dışı</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="matches">Maçlar</TabsTrigger>
+            </TabsList>
           </div>
 
           <TabsContent value="players" className="space-y-4">
-            {password && (
-              <PlayersTab
-                password={password}
-                tournamentStarted={tournamentStarted}
-                onTournamentStarted={() => setTournamentStarted(true)}
-                onPlayerCountChange={setPlayerCount}
-              />
-            )}
+            <PlayersTab />
           </TabsContent>
 
           <TabsContent value="teams" className="space-y-4">
-            {password && (
-              <TeamsTab password={password} onDisabledCountChange={setDisabledTeamCount} />
-            )}
+            <TeamsTab />
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            {password && (
-              <MatchesTab password={password} tournamentStarted={tournamentStarted} />
-            )}
+            <MatchesTab />
           </TabsContent>
-
-
         </Tabs>
       </main>
     </div>

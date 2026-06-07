@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DeletePlayerDialog, type Player } from "@/components/admin/delete-player-dialog";
 import { StartTournamentDialog } from "@/components/admin/start-tournament-dialog";
+import { useAdminStore } from "@/lib/stores/admin-store";
+import { adminApi } from "@/lib/api";
 
 type SortField = "name" | "team" | "date";
 
@@ -22,15 +24,8 @@ function SortButton({ label, field, current, dir, onSort }: {
   );
 }
 
-type PlayersTabProps = {
-  password: string;
-  tournamentStarted: boolean;
-  onTournamentStarted: () => void;
-  onError?: (msg: string | null) => void;
-  onPlayerCountChange?: (count: number) => void;
-};
-
-export function PlayersTab({ password, tournamentStarted, onTournamentStarted, onError, onPlayerCountChange }: PlayersTabProps) {
+export function PlayersTab() {
+  const { password, tournamentStarted, setTournamentStarted, setPlayerCount } = useAdminStore();
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [playerSearch, setPlayerSearch] = useState("");
@@ -42,31 +37,25 @@ export function PlayersTab({ password, tournamentStarted, onTournamentStarted, o
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const authHeaders = useCallback(
-    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${password}` }),
-    [password]
-  );
-
   useEffect(() => {
     if (!password) return;
-    fetch("/api/admin/players", { headers: authHeaders() })
-      .then((r) => r.json())
+    adminApi.getPlayers(password)
       .then(({ players }) => {
         const list = players ?? [];
         setPlayers(list);
-        onPlayerCountChange?.(list.length);
+        setPlayerCount(list.length);
       })
       .finally(() => setIsLoading(false));
-  }, [password, authHeaders]);
+  }, [password, setPlayerCount]);
 
   async function handleDelete() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      await fetch(`/api/admin/players/${deleteTarget.id}`, { method: "DELETE", headers: authHeaders() });
+      await adminApi.deletePlayer(deleteTarget.id, password);
       setPlayers((prev) => {
         const next = prev.filter((p) => p.id !== deleteTarget.id);
-        onPlayerCountChange?.(next.length);
+        setPlayerCount(next.length);
         return next;
       });
       setDeleteTarget(null);
@@ -80,14 +69,10 @@ export function PlayersTab({ password, tournamentStarted, onTournamentStarted, o
     setError(null);
     setShowStartDialog(false);
     try {
-      const res = await fetch("/api/admin/tournament/start", {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify(options),
-      });
+      const res = await adminApi.startTournament(options, password);
       const data = await res.json();
       if (!res.ok) setError(data.message);
-      else onTournamentStarted();
+      else setTournamentStarted(true);
     } finally {
       setIsStarting(false);
     }
