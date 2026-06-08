@@ -368,7 +368,7 @@ export function PlayoffsClient({
                 {bracket.thirdPlaceMatch && (
                   <div className="pt-5 border-t border-dashed border-border/50">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center mb-3">
-                      3. Yer Maçı
+                      Üçüncülük Maçı
                     </p>
                     <div style={{ maxWidth: CARD_WIDTH, margin: "0 auto" }}>
                       <BracketMatchCard match={bracket.thirdPlaceMatch} round={bracket.totalRounds} isThirdPlace />
@@ -382,23 +382,25 @@ export function PlayoffsClient({
             {view === "list" && (
               <div className="flex flex-col gap-6 max-w-2xl w-full mx-auto">
                 {bracket.rounds.map(({ round, label, matches }) => (
-                  <div key={round} className="space-y-3">
-                    <h2 className="text-sm font-semibold">{label}</h2>
-                    <div className="space-y-2">
-                      {matches.map((match) => (
-                        <ListMatchCard key={`${round}-${match.slot}`} match={match} round={round} />
-                      ))}
+                  <>
+                    <div key={round} className="space-y-3">
+                      <h2 className="text-sm font-semibold">{label}</h2>
+                      <div className="space-y-2">
+                        {matches.map((match) => (
+                          <ListMatchCard key={`${round}-${match.slot}`} match={match} round={round} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                    {round === bracket.totalRounds - 1 && bracket.thirdPlaceMatch && (
+                      <div key="third-place" className="space-y-3">
+                        <h2 className="text-sm font-semibold">Üçüncülük Maçı</h2>
+                        <div className="space-y-2">
+                          <ListMatchCard match={bracket.thirdPlaceMatch} round={bracket.totalRounds} isThirdPlace />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ))}
-                {bracket.thirdPlaceMatch && (
-                  <div className="space-y-3 pt-2 border-t border-dashed border-border/50">
-                    <h2 className="text-sm font-semibold">3. Yer Maçı</h2>
-                    <div className="space-y-2">
-                      <ListMatchCard match={bracket.thirdPlaceMatch} round={bracket.totalRounds} isThirdPlace />
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </>
