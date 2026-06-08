@@ -370,7 +370,7 @@ export function PlayoffsClient({
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center mb-3">
                       Üçüncülük Maçı
                     </p>
-                    <div style={{ maxWidth: CARD_WIDTH, margin: "0 auto" }}>
+                    <div style={{ width: "100%", maxWidth: 300, margin: "0 auto" }}>
                       <BracketMatchCard match={bracket.thirdPlaceMatch} round={bracket.totalRounds} isThirdPlace />
                     </div>
                   </div>
