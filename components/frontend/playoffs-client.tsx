@@ -35,10 +35,10 @@ type PlayoffsClientProps = {
   };
 };
 
-const CARD_WIDTH = 176;
-const CONNECTOR_WIDTH = 32;
-const BASE_SLOT_HEIGHT = 92; // must fit a ~82px tall match card
-const LABEL_HEIGHT = 28;
+const CARD_WIDTH = 220;
+const CONNECTOR_WIDTH = 40;
+const BASE_SLOT_HEIGHT = 110; // must fit a ~82px tall match card
+const LABEL_HEIGHT = 32;
 
 // Horizontal connector column between two adjacent rounds.
 //
@@ -288,7 +288,7 @@ export function PlayoffsClient({
 
         {bracket.rounds.length > 0 && (
           <div className="overflow-x-auto -mx-4 px-4">
-            <div style={{ display: "flex", alignItems: "flex-start" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", paddingRight: 16, paddingBottom: 24 }}>
               {columns}
             </div>
           </div>
