@@ -26,6 +26,8 @@ export function MatchesTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({});
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+  const [resettingMatchId, setResettingMatchId] = useState<string | null>(null);
+  const [confirmResetId, setConfirmResetId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!password || !tournamentStarted) { setIsLoading(false); return; }
@@ -33,6 +35,26 @@ export function MatchesTab() {
       .then(({ matches }) => setMatches(matches ?? []))
       .finally(() => setIsLoading(false));
   }, [password, tournamentStarted]);
+
+  async function handleResetMatch(matchId: string) {
+    setResettingMatchId(matchId);
+    try {
+      const res = await adminApi.resetMatch(matchId, password);
+      if (!res.ok) return;
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === matchId ? { ...m, homeScore: null, awayScore: null, isCompleted: false } : m
+        )
+      );
+      setScoreInputs((prev) => {
+        const next = { ...prev };
+        delete next[matchId];
+        return next;
+      });
+    } finally {
+      setResettingMatchId(null);
+    }
+  }
 
   async function handleSaveScore(matchId: string) {
     const input = scoreInputs[matchId];
@@ -154,10 +176,34 @@ export function MatchesTab() {
                         <TableCell>
                           <div className="flex gap-2 justify-end">
                             {match.isCompleted && input === undefined ? (
-                              <Button variant="outline" size="sm"
-                                onClick={() => setScoreInputs((prev) => ({ ...prev, [match.id]: { home: match.homeScore?.toString() ?? "", away: match.awayScore?.toString() ?? "" } }))}>
-                                Düzenle
-                              </Button>
+                              <>
+                                <Button variant="outline" size="sm"
+                                  onClick={() => setScoreInputs((prev) => ({ ...prev, [match.id]: { home: match.homeScore?.toString() ?? "", away: match.awayScore?.toString() ?? "" } }))}>
+                                  Düzenle
+                                </Button>
+                                {confirmResetId === match.id ? (
+                                  <>
+                                    <Button
+                                      variant="destructive" size="sm"
+                                      disabled={resettingMatchId === match.id}
+                                      onClick={() => { setConfirmResetId(null); handleResetMatch(match.id); }}
+                                    >
+                                      {resettingMatchId === match.id ? "..." : "Evet, Sıfırla"}
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => setConfirmResetId(null)}>
+                                      İptal
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    variant="outline" size="sm"
+                                    className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                                    onClick={() => setConfirmResetId(match.id)}
+                                  >
+                                    Sıfırla
+                                  </Button>
+                                )}
+                              </>
                             ) : (
                               <Button size="sm" disabled={isSaving || !input?.home || !input?.away} onClick={() => handleSaveScore(match.id)}>
                                 {isSaving ? "Kaydediliyor..." : "Kaydet"}

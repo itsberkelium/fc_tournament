@@ -86,6 +86,9 @@ export const adminApi = {
       body: JSON.stringify(body),
     }),
 
+  resetMatch: (id: string, pw: string) =>
+    fetch(`/api/admin/matches/${id}`, { method: "DELETE", headers: bearer(pw) }),
+
   getClaimedTeams: (): Promise<ClaimedTeamsResponse> =>
     fetch("/api/players/claimed-teams").then((r) => r.json()),
 

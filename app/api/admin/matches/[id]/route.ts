@@ -4,6 +4,27 @@ import { verifyAdminRequest } from "@/lib/admin-guard";
 import { advancePlayoffBracket } from "@/lib/playoff-bracket";
 import { scoreSchema, validationError } from "@/lib/validation";
 
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const error = verifyAdminRequest(request);
+  if (error) return error;
+
+  const { id } = await params;
+
+  try {
+    const existing = await db.match.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ message: "Maç bulunamadı." }, { status: 404 });
+
+    await db.match.update({
+      where: { id },
+      data: { homeScore: null, awayScore: null, isCompleted: false },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const error = verifyAdminRequest(request);
   if (error) return error;
