@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
@@ -35,19 +36,13 @@ type PlayoffsClientProps = {
   };
 };
 
-const CARD_WIDTH = 220;
+const CARD_WIDTH = 224;
 const CONNECTOR_WIDTH = 40;
-const BASE_SLOT_HEIGHT = 110; // must fit a ~82px tall match card
+const BASE_SLOT_HEIGHT = 120;
 const LABEL_HEIGHT = 32;
 
 // Horizontal connector column between two adjacent rounds.
-//
-// Each connector cell spans 2 feeder slots, so feeder centers land at
-// exactly 25% and 75% of the cell height — identical math to the
-// vertical bracket, just rotated 90°.
-//   left stubs  — horizontal lines at 25 % and 75 % (from feeder cards)
-//   vertical bar — connects the two stubs at x=50%
-//   output stub  — horizontal line at 50 % going right (to output card)
+// Feeder centers land at 25% and 75% of each cell height.
 function RoundConnector({
   outputCount,
   totalHeight,
@@ -65,50 +60,10 @@ function RoundConnector({
       <div style={{ height: LABEL_HEIGHT }} />
       {Array.from({ length: outputCount }).map((_, i) => (
         <div key={i} style={{ position: "relative", height: cellHeight }}>
-          {/* left stub — top feeder */}
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(25% - 0.5px)",
-              left: 0,
-              width: "50%",
-              height: 1,
-              background: color,
-            }}
-          />
-          {/* left stub — bottom feeder */}
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(75% - 0.5px)",
-              left: 0,
-              width: "50%",
-              height: 1,
-              background: color,
-            }}
-          />
-          {/* vertical bar */}
-          <div
-            style={{
-              position: "absolute",
-              left: "calc(50% - 0.5px)",
-              top: "25%",
-              height: "50%",
-              width: 1,
-              background: color,
-            }}
-          />
-          {/* output stub */}
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(50% - 0.5px)",
-              left: "50%",
-              right: 0,
-              height: 1,
-              background: color,
-            }}
-          />
+          <div style={{ position: "absolute", top: "calc(25% - 0.5px)", left: 0, width: "50%", height: 1, background: color }} />
+          <div style={{ position: "absolute", top: "calc(75% - 0.5px)", left: 0, width: "50%", height: 1, background: color }} />
+          <div style={{ position: "absolute", left: "calc(50% - 0.5px)", top: "25%", height: "50%", width: 1, background: color }} />
+          <div style={{ position: "absolute", top: "calc(50% - 0.5px)", left: "50%", right: 0, height: 1, background: color }} />
         </div>
       ))}
     </div>
@@ -126,6 +81,18 @@ export function PlayoffsClient({
   const currentPlayerName = player?.playerName;
   const firstRoundMatchCount = bracket.rounds[0]?.matches.length ?? 1;
   const totalHeight = firstRoundMatchCount * BASE_SLOT_HEIGHT;
+
+  const [view, setView] = useState<"bracket" | "list">("bracket");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("playoffs-view");
+    if (saved === "list" || saved === "bracket") setView(saved);
+  }, []);
+
+  function switchView(v: "bracket" | "list") {
+    setView(v);
+    localStorage.setItem("playoffs-view", v);
+  }
 
   function MatchCard({
     match,
@@ -170,31 +137,27 @@ export function PlayoffsClient({
       const faded = match.isCompleted && !isWinner;
       if (!p || match.isPlaceholder) {
         return (
-          <div className="flex items-center gap-2 px-2.5 py-2 min-h-[40px]">
-            <div className="w-5 h-3.5 rounded-sm bg-muted/60 shrink-0" />
-            <p className="text-xs text-muted-foreground italic leading-tight truncate">{ph}</p>
+          <div className="flex items-center gap-2.5 px-3 py-2.5 min-h-[48px]">
+            <div className="w-6 h-4 rounded-sm bg-muted/60 shrink-0" />
+            <p className="text-sm text-muted-foreground italic leading-tight truncate">{ph}</p>
           </div>
         );
       }
       return (
         <div
-          className={`flex items-center gap-2 px-2.5 py-2 min-h-[40px] ${isWinner ? "bg-primary/5" : ""}`}
+          className={`flex items-center gap-2.5 px-3 py-2.5 min-h-[48px] ${isWinner ? "bg-primary/5" : ""}`}
         >
           <div className={faded ? "opacity-40" : ""}>
             <Flag teamId={p.teamId} teamName={p.teamName} />
           </div>
           <div className={`flex-1 min-w-0 ${faded ? "opacity-40" : ""}`}>
-            <p
-              className={`text-xs leading-none truncate ${isWinner ? "font-semibold" : "font-medium"}`}
-            >
+            <p className={`text-sm leading-none truncate ${isWinner ? "font-semibold" : "font-medium"}`}>
               {p.teamName}
             </p>
-            <p className="text-xs text-muted-foreground truncate mt-0.5">{p.playerName}</p>
+            <p className="text-xs text-muted-foreground truncate mt-1">{p.playerName}</p>
           </div>
           {match.isCompleted && score !== null && (
-            <span
-              className={`text-sm font-bold tabular-nums shrink-0 pl-1 ${faded ? "opacity-40" : ""}`}
-            >
+            <span className={`text-base font-bold tabular-nums shrink-0 pl-1 ${faded ? "opacity-40" : ""}`}>
               {score}
             </span>
           )}
@@ -208,22 +171,12 @@ export function PlayoffsClient({
           isMyMatch ? "border-primary/60 ring-1 ring-primary/20" : "border-border"
         }`}
       >
-        <PlayerRow
-          p={match.homePlayer}
-          isWinner={homeIsWinner}
-          score={match.homeScore}
-          ph={homePlaceholderText}
-        />
+        <PlayerRow p={match.homePlayer} isWinner={homeIsWinner} score={match.homeScore} ph={homePlaceholderText} />
         <div className="border-t border-border" />
-        <PlayerRow
-          p={match.awayPlayer}
-          isWinner={awayIsWinner}
-          score={match.awayScore}
-          ph={awayPlaceholderText}
-        />
+        <PlayerRow p={match.awayPlayer} isWinner={awayIsWinner} score={match.awayScore} ph={awayPlaceholderText} />
         {isFinal && match.isCompleted && match.winnerId && (
-          <div className="border-t border-border py-1.5 text-center bg-amber-500/10">
-            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+          <div className="border-t border-border py-2 text-center bg-amber-500/10">
+            <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
               🏆{" "}
               {match.winnerId === match.homePlayer?.id
                 ? match.homePlayer?.playerName
@@ -235,33 +188,26 @@ export function PlayoffsClient({
     );
   }
 
-  // Build the bracket columns (rounds interleaved with connectors)
-  const columns: React.ReactNode[] = [];
+  // Build bracket columns (rounds interleaved with connectors)
+  const bracketColumns: React.ReactNode[] = [];
   bracket.rounds.forEach(({ round, label, matches }, roundIndex) => {
     if (roundIndex > 0) {
-      columns.push(
-        <RoundConnector
-          key={`conn-${roundIndex}`}
-          outputCount={matches.length}
-          totalHeight={totalHeight}
-        />
+      bracketColumns.push(
+        <RoundConnector key={`conn-${roundIndex}`} outputCount={matches.length} totalHeight={totalHeight} />
       );
     }
     const slotHeight = totalHeight / matches.length;
-    columns.push(
+    bracketColumns.push(
       <div key={`round-${round}`} style={{ width: CARD_WIDTH, flexShrink: 0 }}>
-        <div
-          style={{ height: LABEL_HEIGHT }}
-          className="flex items-center justify-center"
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <div style={{ height: LABEL_HEIGHT }} className="flex items-center justify-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {label}
           </p>
         </div>
         {matches.map((match) => (
           <div
             key={match.slot}
-            style={{ height: slotHeight, display: "flex", alignItems: "center", padding: "3px 0" }}
+            style={{ height: slotHeight, display: "flex", alignItems: "center", padding: "4px 0" }}
           >
             <MatchCard match={match} round={round} />
           </div>
@@ -269,6 +215,17 @@ export function PlayoffsClient({
       </div>
     );
   });
+
+  const thirdPlaceSection = bracket.thirdPlaceMatch && bracket.totalRounds >= 2 && (
+    <div className="pt-5 border-t border-dashed border-border/50">
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center mb-3">
+        3. Yer Maçı
+      </p>
+      <div style={{ maxWidth: CARD_WIDTH, margin: "0 auto" }}>
+        <MatchCard match={bracket.thirdPlaceMatch} round={bracket.totalRounds} isThirdPlace />
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-1 flex-col">
@@ -287,26 +244,64 @@ export function PlayoffsClient({
         )}
 
         {bracket.rounds.length > 0 && (
-          <div className="overflow-x-auto -mx-4 px-4">
-            <div style={{ display: "flex", alignItems: "flex-start", paddingRight: 16, paddingBottom: 24 }}>
-              {columns}
+          <>
+            {/* View toggle */}
+            <div className="flex justify-end">
+              <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
+                <button
+                  onClick={() => switchView("list")}
+                  className={`px-3 py-1.5 transition-colors ${
+                    view === "list"
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  Liste
+                </button>
+                <div className="w-px bg-border" />
+                <button
+                  onClick={() => switchView("bracket")}
+                  className={`px-3 py-1.5 transition-colors ${
+                    view === "bracket"
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  Braket
+                </button>
+              </div>
             </div>
-          </div>
-        )}
 
-        {bracket.thirdPlaceMatch && bracket.totalRounds >= 2 && (
-          <div className="pt-5 border-t border-dashed border-border/50">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
-              3. Yer Maçı
-            </p>
-            <div style={{ maxWidth: CARD_WIDTH, margin: "0 auto" }}>
-              <MatchCard
-                match={bracket.thirdPlaceMatch}
-                round={bracket.totalRounds}
-                isThirdPlace
-              />
-            </div>
-          </div>
+            {/* Bracket view */}
+            {view === "bracket" && (
+              <div className="overflow-x-auto -mx-4 px-4">
+                <div style={{ display: "flex", alignItems: "flex-start", paddingRight: 16, paddingBottom: 24 }}>
+                  {bracketColumns}
+                </div>
+              </div>
+            )}
+
+            {/* List view */}
+            {view === "list" && (
+              <div className="flex flex-col gap-6">
+                {bracket.rounds.map(({ round, label, matches }) => (
+                  <div key={round}>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                      {label}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {matches.map((match) => (
+                        <MatchCard key={match.slot} match={match} round={round} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {thirdPlaceSection}
+              </div>
+            )}
+
+            {view === "bracket" && thirdPlaceSection}
+          </>
         )}
 
         {bracket.rounds.some((r) =>
