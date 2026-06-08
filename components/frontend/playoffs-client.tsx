@@ -35,90 +35,82 @@ type PlayoffsClientProps = {
   };
 };
 
-// Renders the bracket connector between two rounds.
+const CARD_WIDTH = 176;
+const CONNECTOR_WIDTH = 32;
+const BASE_SLOT_HEIGHT = 92; // must fit a ~82px tall match card
+const LABEL_HEIGHT = 28;
+
+// Horizontal connector column between two adjacent rounds.
 //
-// Each output match spans `colSpan` columns. Within that span, the two
-// feeder match centers are always at 25 % and 75 % of the span width
-// (because each feeder occupies exactly half the span with equal padding).
-// Four lines are drawn:
-//   ① left feeder stub  — vertical, from top down to the midpoint (at 25 %)
-//   ② right feeder stub — vertical, from top down to the midpoint (at 75 %)
-//   ③ horizontal bar    — at the midpoint, connecting ① and ②
-//   ④ output stub       — vertical, from the midpoint down to the next card (at 50 %)
-function BracketConnector({
+// Each connector cell spans 2 feeder slots, so feeder centers land at
+// exactly 25% and 75% of the cell height — identical math to the
+// vertical bracket, just rotated 90°.
+//   left stubs  — horizontal lines at 25 % and 75 % (from feeder cards)
+//   vertical bar — connects the two stubs at x=50%
+//   output stub  — horizontal line at 50 % going right (to output card)
+function RoundConnector({
   outputCount,
-  totalColumns,
-  height = 48,
+  totalHeight,
   dashed = false,
 }: {
   outputCount: number;
-  totalColumns: number;
-  height?: number;
+  totalHeight: number;
   dashed?: boolean;
 }) {
   const color = dashed ? "hsl(var(--border) / 0.4)" : "hsl(var(--border))";
-  const borderStyle = dashed ? "dashed" : "solid";
+  const cellHeight = totalHeight / outputCount;
 
   return (
-    <div
-      className="grid"
-      style={{ gridTemplateColumns: `repeat(${totalColumns}, 1fr)` }}
-    >
-      {Array.from({ length: outputCount }).map((_, i) => {
-        const colSpan = totalColumns / outputCount;
-        return (
+    <div style={{ width: CONNECTOR_WIDTH, flexShrink: 0 }}>
+      <div style={{ height: LABEL_HEIGHT }} />
+      {Array.from({ length: outputCount }).map((_, i) => (
+        <div key={i} style={{ position: "relative", height: cellHeight }}>
+          {/* left stub — top feeder */}
           <div
-            key={i}
-            style={{ gridColumn: `span ${colSpan}`, position: "relative", height }}
-          >
-            {/* ① left feeder stub */}
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                bottom: "50%",
-                left: "calc(25% - 0.5px)",
-                width: 1,
-                background: color,
-              }}
-            />
-            {/* ② right feeder stub */}
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                bottom: "50%",
-                left: "calc(75% - 0.5px)",
-                width: 1,
-                background: color,
-              }}
-            />
-            {/* ③ horizontal bar */}
-            <div
-              style={{
-                position: "absolute",
-                top: "calc(50% - 0.5px)",
-                left: "25%",
-                right: "25%",
-                height: 1,
-                background: color,
-                borderTop: `1px ${borderStyle} ${color}`,
-              }}
-            />
-            {/* ④ output stub */}
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                bottom: 0,
-                left: "calc(50% - 0.5px)",
-                width: 1,
-                background: color,
-              }}
-            />
-          </div>
-        );
-      })}
+            style={{
+              position: "absolute",
+              top: "calc(25% - 0.5px)",
+              left: 0,
+              width: "50%",
+              height: 1,
+              background: color,
+            }}
+          />
+          {/* left stub — bottom feeder */}
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(75% - 0.5px)",
+              left: 0,
+              width: "50%",
+              height: 1,
+              background: color,
+            }}
+          />
+          {/* vertical bar */}
+          <div
+            style={{
+              position: "absolute",
+              left: "calc(50% - 0.5px)",
+              top: "25%",
+              height: "50%",
+              width: 1,
+              background: color,
+            }}
+          />
+          {/* output stub */}
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(50% - 0.5px)",
+              left: "50%",
+              right: 0,
+              height: 1,
+              background: color,
+            }}
+          />
+        </div>
+      ))}
     </div>
   );
 }
@@ -133,6 +125,7 @@ export function PlayoffsClient({
   const { player } = usePlayerStore();
   const currentPlayerName = player?.playerName;
   const firstRoundMatchCount = bracket.rounds[0]?.matches.length ?? 1;
+  const totalHeight = firstRoundMatchCount * BASE_SLOT_HEIGHT;
 
   function MatchCard({
     match,
@@ -211,7 +204,7 @@ export function PlayoffsClient({
 
     return (
       <div
-        className={`rounded-md border overflow-hidden ${
+        className={`w-full rounded-md border overflow-hidden ${
           isMyMatch ? "border-primary/60 ring-1 ring-primary/20" : "border-border"
         }`}
       >
@@ -242,12 +235,47 @@ export function PlayoffsClient({
     );
   }
 
+  // Build the bracket columns (rounds interleaved with connectors)
+  const columns: React.ReactNode[] = [];
+  bracket.rounds.forEach(({ round, label, matches }, roundIndex) => {
+    if (roundIndex > 0) {
+      columns.push(
+        <RoundConnector
+          key={`conn-${roundIndex}`}
+          outputCount={matches.length}
+          totalHeight={totalHeight}
+        />
+      );
+    }
+    const slotHeight = totalHeight / matches.length;
+    columns.push(
+      <div key={`round-${round}`} style={{ width: CARD_WIDTH, flexShrink: 0 }}>
+        <div
+          style={{ height: LABEL_HEIGHT }}
+          className="flex items-center justify-center"
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            {label}
+          </p>
+        </div>
+        {matches.map((match) => (
+          <div
+            key={match.slot}
+            style={{ height: slotHeight, display: "flex", alignItems: "center", padding: "3px 0" }}
+          >
+            <MatchCard match={match} round={round} />
+          </div>
+        ))}
+      </div>
+    );
+  });
+
   return (
     <div className="flex flex-1 flex-col">
       <PageHeader tournamentName={tournamentName} />
       <PageNav active="playoffs" showPlayoffs />
 
-      <main className="flex flex-1 flex-col max-w-3xl w-full mx-auto px-4 py-6 gap-6">
+      <main className="flex flex-1 flex-col max-w-5xl w-full mx-auto px-4 py-6 gap-6">
         {!playoffStarted && (
           <div className="rounded-md border border-border bg-muted/30 px-4 py-3">
             <p className="text-sm text-muted-foreground">
@@ -260,63 +288,23 @@ export function PlayoffsClient({
 
         {bracket.rounds.length > 0 && (
           <div className="overflow-x-auto -mx-4 px-4">
-            <div style={{ minWidth: `${Math.max(firstRoundMatchCount * 160, 300)}px` }}>
-              {bracket.rounds.map(({ round, label, matches }, roundIndex) => {
-                const colSpan = firstRoundMatchCount / matches.length;
-                return (
-                  <div key={round}>
-                    {roundIndex > 0 && (
-                      <BracketConnector
-                        outputCount={matches.length}
-                        totalColumns={firstRoundMatchCount}
-                      />
-                    )}
+            <div style={{ display: "flex", alignItems: "flex-start" }}>
+              {columns}
+            </div>
+          </div>
+        )}
 
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
-                      {label}
-                    </p>
-
-                    <div
-                      className="grid"
-                      style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
-                    >
-                      {matches.map((match) => (
-                        <div
-                          key={match.slot}
-                          style={{ gridColumn: `span ${colSpan}` }}
-                          className="px-1"
-                        >
-                          <MatchCard match={match} round={round} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Third place match shown below the main bracket */}
-              {bracket.thirdPlaceMatch && bracket.totalRounds >= 2 && (
-                <div className="mt-8 pt-5 border-t border-dashed border-border/50">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
-                    3. Yer Maçı
-                  </p>
-                  <div
-                    className="grid"
-                    style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
-                  >
-                    <div
-                      style={{ gridColumn: `span ${firstRoundMatchCount}` }}
-                      className="px-[20%]"
-                    >
-                      <MatchCard
-                        match={bracket.thirdPlaceMatch}
-                        round={bracket.totalRounds}
-                        isThirdPlace
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+        {bracket.thirdPlaceMatch && bracket.totalRounds >= 2 && (
+          <div className="pt-5 border-t border-dashed border-border/50">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
+              3. Yer Maçı
+            </p>
+            <div style={{ maxWidth: CARD_WIDTH, margin: "0 auto" }}>
+              <MatchCard
+                match={bracket.thirdPlaceMatch}
+                round={bracket.totalRounds}
+                isThirdPlace
+              />
             </div>
           </div>
         )}
