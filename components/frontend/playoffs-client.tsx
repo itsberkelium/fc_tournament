@@ -35,6 +35,94 @@ type PlayoffsClientProps = {
   };
 };
 
+// Renders the bracket connector between two rounds.
+//
+// Each output match spans `colSpan` columns. Within that span, the two
+// feeder match centers are always at 25 % and 75 % of the span width
+// (because each feeder occupies exactly half the span with equal padding).
+// Four lines are drawn:
+//   ① left feeder stub  — vertical, from top down to the midpoint (at 25 %)
+//   ② right feeder stub — vertical, from top down to the midpoint (at 75 %)
+//   ③ horizontal bar    — at the midpoint, connecting ① and ②
+//   ④ output stub       — vertical, from the midpoint down to the next card (at 50 %)
+function BracketConnector({
+  outputCount,
+  totalColumns,
+  height = 48,
+  dashed = false,
+}: {
+  outputCount: number;
+  totalColumns: number;
+  height?: number;
+  dashed?: boolean;
+}) {
+  const color = dashed ? "hsl(var(--border) / 0.4)" : "hsl(var(--border))";
+  const borderStyle = dashed ? "dashed" : "solid";
+
+  return (
+    <div
+      className="grid"
+      style={{ gridTemplateColumns: `repeat(${totalColumns}, 1fr)` }}
+    >
+      {Array.from({ length: outputCount }).map((_, i) => {
+        const colSpan = totalColumns / outputCount;
+        return (
+          <div
+            key={i}
+            style={{ gridColumn: `span ${colSpan}`, position: "relative", height }}
+          >
+            {/* ① left feeder stub */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: "50%",
+                left: "calc(25% - 0.5px)",
+                width: 1,
+                background: color,
+              }}
+            />
+            {/* ② right feeder stub */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: "50%",
+                left: "calc(75% - 0.5px)",
+                width: 1,
+                background: color,
+              }}
+            />
+            {/* ③ horizontal bar */}
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(50% - 0.5px)",
+                left: "25%",
+                right: "25%",
+                height: 1,
+                background: color,
+                borderTop: `1px ${borderStyle} ${color}`,
+              }}
+            />
+            {/* ④ output stub */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                bottom: 0,
+                left: "calc(50% - 0.5px)",
+                width: 1,
+                background: color,
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PlayoffsClient({
   tournamentName,
   teamCount,
@@ -87,7 +175,6 @@ export function PlayoffsClient({
       ph: string;
     }) {
       const faded = match.isCompleted && !isWinner;
-
       if (!p || match.isPlaceholder) {
         return (
           <div className="flex items-center gap-2 px-2.5 py-2 min-h-[40px]">
@@ -96,7 +183,6 @@ export function PlayoffsClient({
           </div>
         );
       }
-
       return (
         <div
           className={`flex items-center gap-2 px-2.5 py-2 min-h-[40px] ${isWinner ? "bg-primary/5" : ""}`}
@@ -105,13 +191,17 @@ export function PlayoffsClient({
             <Flag teamId={p.teamId} teamName={p.teamName} />
           </div>
           <div className={`flex-1 min-w-0 ${faded ? "opacity-40" : ""}`}>
-            <p className={`text-xs leading-none truncate ${isWinner ? "font-semibold" : "font-medium"}`}>
+            <p
+              className={`text-xs leading-none truncate ${isWinner ? "font-semibold" : "font-medium"}`}
+            >
               {p.teamName}
             </p>
             <p className="text-xs text-muted-foreground truncate mt-0.5">{p.playerName}</p>
           </div>
           {match.isCompleted && score !== null && (
-            <span className={`text-sm font-bold tabular-nums shrink-0 pl-1 ${faded ? "opacity-40" : ""}`}>
+            <span
+              className={`text-sm font-bold tabular-nums shrink-0 pl-1 ${faded ? "opacity-40" : ""}`}
+            >
               {score}
             </span>
           )}
@@ -152,40 +242,6 @@ export function PlayoffsClient({
     );
   }
 
-  function RoundLabel({ label }: { label: string }) {
-    return (
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
-        {label}
-      </p>
-    );
-  }
-
-  function Connector({ count, dashed = false }: { count: number; dashed?: boolean }) {
-    const borderClass = dashed
-      ? "border-dashed border-muted-foreground/30"
-      : "border-border";
-    return (
-      <div
-        className="grid"
-        style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
-      >
-        {Array.from({ length: count }).map((_, i) => {
-          const colSpan = firstRoundMatchCount / count;
-          return (
-            <div
-              key={i}
-              style={{ gridColumn: `span ${colSpan}` }}
-              className="flex h-8"
-            >
-              <div className={`flex-1 border-l border-b ${borderClass}`} />
-              <div className={`flex-1 border-r border-b ${borderClass}`} />
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-1 flex-col">
       <PageHeader tournamentName={tournamentName} />
@@ -207,52 +263,60 @@ export function PlayoffsClient({
             <div style={{ minWidth: `${Math.max(firstRoundMatchCount * 160, 300)}px` }}>
               {bracket.rounds.map(({ round, label, matches }, roundIndex) => {
                 const colSpan = firstRoundMatchCount / matches.length;
-                const isSemiFinal = round === bracket.totalRounds - 1;
-
                 return (
                   <div key={round}>
-                    {/* Connector from previous round */}
-                    {roundIndex > 0 && <Connector count={matches.length} />}
+                    {roundIndex > 0 && (
+                      <BracketConnector
+                        outputCount={matches.length}
+                        totalColumns={firstRoundMatchCount}
+                      />
+                    )}
 
-                    <RoundLabel label={label} />
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
+                      {label}
+                    </p>
 
-                    {/* Match cards */}
                     <div
-                      className="grid gap-2"
+                      className="grid"
                       style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
                     >
                       {matches.map((match) => (
-                        <div key={match.slot} style={{ gridColumn: `span ${colSpan}` }}>
+                        <div
+                          key={match.slot}
+                          style={{ gridColumn: `span ${colSpan}` }}
+                          className="px-1"
+                        >
                           <MatchCard match={match} round={round} />
                         </div>
                       ))}
                     </div>
-
-                    {/* 3rd place match after semi-finals */}
-                    {isSemiFinal && bracket.thirdPlaceMatch && (
-                      <div className="mt-0">
-                        <Connector count={1} dashed />
-                        <RoundLabel label="3. Yer Maçı" />
-                        <div
-                          className="grid"
-                          style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
-                        >
-                          <div
-                            style={{ gridColumn: `span ${firstRoundMatchCount}` }}
-                            className="px-[20%]"
-                          >
-                            <MatchCard
-                              match={bracket.thirdPlaceMatch}
-                              round={round}
-                              isThirdPlace
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
+
+              {/* Third place match shown below the main bracket */}
+              {bracket.thirdPlaceMatch && bracket.totalRounds >= 2 && (
+                <div className="mt-8 pt-5 border-t border-dashed border-border/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
+                    3. Yer Maçı
+                  </p>
+                  <div
+                    className="grid"
+                    style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
+                  >
+                    <div
+                      style={{ gridColumn: `span ${firstRoundMatchCount}` }}
+                      className="px-[20%]"
+                    >
+                      <MatchCard
+                        match={bracket.thirdPlaceMatch}
+                        round={bracket.totalRounds}
+                        isThirdPlace
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
