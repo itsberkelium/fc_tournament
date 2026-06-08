@@ -1,7 +1,6 @@
 "use client";
 
 import { usePlayerStore } from "@/lib/stores/player-store";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { Flag } from "@/components/flag";
@@ -36,17 +35,33 @@ type PlayoffsClientProps = {
   };
 };
 
-export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, playoffStarted, bracket }: PlayoffsClientProps) {
+export function PlayoffsClient({
+  tournamentName,
+  teamCount,
+  leagueComplete,
+  playoffStarted,
+  bracket,
+}: PlayoffsClientProps) {
   const { player } = usePlayerStore();
   const currentPlayerName = player?.playerName;
+  const firstRoundMatchCount = bracket.rounds[0]?.matches.length ?? 1;
 
-  function renderMatchCard(match: BracketMatch, round: number, keyStr: string, isThirdPlace = false) {
-    const isMyMatch = !!currentPlayerName && (
-      match.homePlayer?.playerName === currentPlayerName ||
-      match.awayPlayer?.playerName === currentPlayerName
-    );
+  function MatchCard({
+    match,
+    round,
+    isThirdPlace = false,
+  }: {
+    match: BracketMatch;
+    round: number;
+    isThirdPlace?: boolean;
+  }) {
+    const isMyMatch =
+      !!currentPlayerName &&
+      (match.homePlayer?.playerName === currentPlayerName ||
+        match.awayPlayer?.playerName === currentPlayerName);
     const homeIsWinner = match.isCompleted && match.winnerId === match.homePlayer?.id;
     const awayIsWinner = match.isCompleted && match.winnerId === match.awayPlayer?.id;
+    const isFinal = !isThirdPlace && round === bracket.totalRounds;
 
     const homePlaceholderText = isThirdPlace
       ? getThirdPlaceFeederLabel(bracket.totalRounds, "home")
@@ -60,71 +75,113 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
         ? `${teamCount - match.slot}. Sıra${match.leagueNotDone ? "*" : ""}`
         : getFeederLabel(round, bracket.totalRounds, match.slot, "away");
 
-    return (
-      <div key={keyStr} className={`rounded-md border border-border p-3 ${isMyMatch ? "bg-primary/5" : ""}`}>
-        <div className="flex items-center gap-2">
-          {/* Home */}
-          <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-            <div className="text-right min-w-0">
-              {match.homePlayer && !match.isPlaceholder ? (
-                <>
-                  <p className={`text-sm leading-none truncate ${homeIsWinner ? "font-bold" : ""} ${match.isCompleted && !homeIsWinner ? "opacity-50" : ""}`}>
-                    {match.homePlayer.teamName}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.homePlayer.playerName}</p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">{homePlaceholderText}</p>
-              )}
-            </div>
-            {match.homePlayer && !match.isPlaceholder && (
-              <Flag teamId={match.homePlayer.teamId} teamName={match.homePlayer.teamName} />
-            )}
-          </div>
+    function PlayerRow({
+      p,
+      isWinner,
+      score,
+      ph,
+    }: {
+      p: MatchPlayer | null;
+      isWinner: boolean;
+      score: number | null;
+      ph: string;
+    }) {
+      const faded = match.isCompleted && !isWinner;
 
-          {/* Score */}
-          <div className="shrink-0 w-20 text-center">
-            {match.isCompleted ? (
-              <span className="text-sm font-bold tabular-nums">{match.homeScore} – {match.awayScore}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground font-medium">
-                {match.isPlaceholder && match.leagueNotDone ? "Tahmini" : "vs"}
-              </span>
-            )}
+      if (!p || match.isPlaceholder) {
+        return (
+          <div className="flex items-center gap-2 px-2.5 py-2 min-h-[40px]">
+            <div className="w-5 h-3.5 rounded-sm bg-muted/60 shrink-0" />
+            <p className="text-xs text-muted-foreground italic leading-tight truncate">{ph}</p>
           </div>
+        );
+      }
 
-          {/* Away */}
-          <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
-            {match.awayPlayer && !match.isPlaceholder && (
-              <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
-            )}
-            <div className="min-w-0">
-              {match.awayPlayer && !match.isPlaceholder ? (
-                <>
-                  <p className={`text-sm leading-none truncate ${awayIsWinner ? "font-bold" : ""} ${match.isCompleted && !awayIsWinner ? "opacity-50" : ""}`}>
-                    {match.awayPlayer.teamName}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.awayPlayer.playerName}</p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">{awayPlaceholderText}</p>
-              )}
-            </div>
+      return (
+        <div
+          className={`flex items-center gap-2 px-2.5 py-2 min-h-[40px] ${isWinner ? "bg-primary/5" : ""}`}
+        >
+          <div className={faded ? "opacity-40" : ""}>
+            <Flag teamId={p.teamId} teamName={p.teamName} />
           </div>
+          <div className={`flex-1 min-w-0 ${faded ? "opacity-40" : ""}`}>
+            <p className={`text-xs leading-none truncate ${isWinner ? "font-semibold" : "font-medium"}`}>
+              {p.teamName}
+            </p>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{p.playerName}</p>
+          </div>
+          {match.isCompleted && score !== null && (
+            <span className={`text-sm font-bold tabular-nums shrink-0 pl-1 ${faded ? "opacity-40" : ""}`}>
+              {score}
+            </span>
+          )}
         </div>
+      );
+    }
 
-        {/* Winner */}
-        {match.isCompleted && match.winnerId && (
-          <div className="mt-2 text-center">
-            <Badge
-              variant={!isThirdPlace && round === bracket.totalRounds ? "default" : "secondary"}
-              className="text-xs"
-            >
-              {!isThirdPlace && round === bracket.totalRounds ? "🏆 " : ""}
-              {isThirdPlace ? "3. Takım: " : "Galip: "}{match.winnerId === match.homePlayer?.id ? match.homePlayer?.playerName : match.awayPlayer?.playerName}
-            </Badge>
+    return (
+      <div
+        className={`rounded-md border overflow-hidden ${
+          isMyMatch ? "border-primary/60 ring-1 ring-primary/20" : "border-border"
+        }`}
+      >
+        <PlayerRow
+          p={match.homePlayer}
+          isWinner={homeIsWinner}
+          score={match.homeScore}
+          ph={homePlaceholderText}
+        />
+        <div className="border-t border-border" />
+        <PlayerRow
+          p={match.awayPlayer}
+          isWinner={awayIsWinner}
+          score={match.awayScore}
+          ph={awayPlaceholderText}
+        />
+        {isFinal && match.isCompleted && match.winnerId && (
+          <div className="border-t border-border py-1.5 text-center bg-amber-500/10">
+            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+              🏆{" "}
+              {match.winnerId === match.homePlayer?.id
+                ? match.homePlayer?.playerName
+                : match.awayPlayer?.playerName}
+            </span>
           </div>
         )}
+      </div>
+    );
+  }
+
+  function RoundLabel({ label }: { label: string }) {
+    return (
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">
+        {label}
+      </p>
+    );
+  }
+
+  function Connector({ count, dashed = false }: { count: number; dashed?: boolean }) {
+    const borderClass = dashed
+      ? "border-dashed border-muted-foreground/30"
+      : "border-border";
+    return (
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
+      >
+        {Array.from({ length: count }).map((_, i) => {
+          const colSpan = firstRoundMatchCount / count;
+          return (
+            <div
+              key={i}
+              style={{ gridColumn: `span ${colSpan}` }}
+              className="flex h-8"
+            >
+              <div className={`flex-1 border-l border-b ${borderClass}`} />
+              <div className={`flex-1 border-r border-b ${borderClass}`} />
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -134,7 +191,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
       <PageHeader tournamentName={tournamentName} />
       <PageNav active="playoffs" showPlayoffs />
 
-      <main className="flex flex-1 flex-col max-w-2xl w-full mx-auto px-6 py-6 space-y-6">
+      <main className="flex flex-1 flex-col max-w-3xl w-full mx-auto px-4 py-6 gap-6">
         {!playoffStarted && (
           <div className="rounded-md border border-border bg-muted/30 px-4 py-3">
             <p className="text-sm text-muted-foreground">
@@ -145,29 +202,67 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
           </div>
         )}
 
-        {bracket.rounds.map(({ round, label, matches }) => (
-          <div key={round}>
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold">{label}</h2>
-              <div className="space-y-2">
-                {matches.map((match) => renderMatchCard(match, round, `${round}-${match.slot}`))}
-              </div>
+        {bracket.rounds.length > 0 && (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <div style={{ minWidth: `${Math.max(firstRoundMatchCount * 160, 300)}px` }}>
+              {bracket.rounds.map(({ round, label, matches }, roundIndex) => {
+                const colSpan = firstRoundMatchCount / matches.length;
+                const isSemiFinal = round === bracket.totalRounds - 1;
+
+                return (
+                  <div key={round}>
+                    {/* Connector from previous round */}
+                    {roundIndex > 0 && <Connector count={matches.length} />}
+
+                    <RoundLabel label={label} />
+
+                    {/* Match cards */}
+                    <div
+                      className="grid gap-2"
+                      style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
+                    >
+                      {matches.map((match) => (
+                        <div key={match.slot} style={{ gridColumn: `span ${colSpan}` }}>
+                          <MatchCard match={match} round={round} />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 3rd place match after semi-finals */}
+                    {isSemiFinal && bracket.thirdPlaceMatch && (
+                      <div className="mt-0">
+                        <Connector count={1} dashed />
+                        <RoundLabel label="3. Yer Maçı" />
+                        <div
+                          className="grid"
+                          style={{ gridTemplateColumns: `repeat(${firstRoundMatchCount}, 1fr)` }}
+                        >
+                          <div
+                            style={{ gridColumn: `span ${firstRoundMatchCount}` }}
+                            className="px-[20%]"
+                          >
+                            <MatchCard
+                              match={bracket.thirdPlaceMatch}
+                              round={round}
+                              isThirdPlace
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-
-            {/* 3rd place match — inserted after semi-finals, before the final */}
-            {round === bracket.totalRounds - 1 && bracket.thirdPlaceMatch && (
-              <div className="space-y-3 mt-6">
-                <h2 className="text-sm font-semibold">3. Yer Maçı</h2>
-                <div className="space-y-2">
-                  {renderMatchCard(bracket.thirdPlaceMatch, bracket.totalRounds, "third-place", true)}
-                </div>
-              </div>
-            )}
           </div>
-        ))}
+        )}
 
-        {bracket.rounds.some((r) => r.matches.some((m) => m.isPlaceholder && m.leagueNotDone)) && (
-          <p className="text-xs text-muted-foreground text-center">* Lig tamamlandığında sıralar netleşecek.</p>
+        {bracket.rounds.some((r) =>
+          r.matches.some((m) => m.isPlaceholder && m.leagueNotDone)
+        ) && (
+          <p className="text-xs text-muted-foreground text-center">
+            * Lig tamamlandığında sıralar netleşecek.
+          </p>
         )}
       </main>
     </div>
