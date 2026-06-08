@@ -15,10 +15,10 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "8000:8000"
+      - "3001:3001"
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}_dev?schema=public"
-      PORT: "8000"
+      PORT: "3001"
     networks:
       - prod_network
 
