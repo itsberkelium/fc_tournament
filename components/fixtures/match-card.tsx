@@ -30,6 +30,7 @@ type MatchCardProps = {
   currentPlayerName?: string;
   scoreInput?: ScoreInput;
   isSaving: boolean;
+  isLocked?: boolean;
   onScoreChange: (matchId: string, field: "home" | "away", value: string) => void;
   onSave: (matchId: string) => void;
   onEdit: (match: Match) => void;
@@ -41,6 +42,7 @@ export function MatchCard({
   currentPlayerName,
   scoreInput,
   isSaving,
+  isLocked,
   onScoreChange,
   onSave,
   onEdit,
@@ -116,8 +118,8 @@ export function MatchCard({
         </div>
       </div>
 
-      {/* Action row — only for my matches, hidden if either player is disqualified */}
-      {isMyMatch && !match.homePlayer.isDisqualified && !match.awayPlayer.isDisqualified && (
+      {/* Action row — only for my matches, hidden if either player is disqualified or matchday is locked */}
+      {isMyMatch && !match.homePlayer.isDisqualified && !match.awayPlayer.isDisqualified && !isLocked && (
         <div className="flex justify-center gap-2">
           {isEditing ? (
             <>

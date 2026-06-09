@@ -30,11 +30,10 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
   const matchdays = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
 
   const currentMatchday =
-    matchdays.find((d) => matches.filter((m) => m.round === d).some((m) => !m.isCompleted)) ??
-    matchdays[matchdays.length - 1];
+    matchdays.find((d) => matches.filter((m) => m.round === d).some((m) => !m.isCompleted)) ?? null;
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const activeDay = selectedDay ?? currentMatchday;
+  const activeDay = selectedDay ?? currentMatchday ?? matchdays[matchdays.length - 1];
   const dayIndex = matchdays.indexOf(activeDay);
 
   function filterMatches(list: Match[]) {

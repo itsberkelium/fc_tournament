@@ -50,6 +50,7 @@ export function MatchdaySection({
             currentPlayerName={currentPlayerName}
             scoreInput={scoreInputs[match.id]}
             isSaving={savingMatchId === match.id}
+            isLocked={!isCurrentDay}
             onScoreChange={onScoreChange}
             onSave={onSave}
             onEdit={onEdit}

@@ -30,6 +30,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ message: "Bu maçın skoru girilemez." }, { status: 403 });
     }
 
+    if (!match.isPlayoff) {
+      const firstIncomplete = await db.match.findFirst({
+        where: { isCompleted: false, isPlayoff: false },
+        orderBy: { round: "asc" },
+        select: { round: true },
+      });
+      const activeRound = firstIncomplete?.round ?? null;
+      if (activeRound === null || match.round !== activeRound) {
+        return NextResponse.json({ message: "Geçmiş maç günlerinin skoru değiştirilemez." }, { status: 403 });
+      }
+    }
+
     const submittingPlayer = homeMatch ? match.homePlayer : match.awayPlayer;
     if (!submittingPlayer.canEnterScore) {
       return NextResponse.json({ message: "Skor girişi izniniz yok." }, { status: 403 });
