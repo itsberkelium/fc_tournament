@@ -59,35 +59,27 @@ export default function AdminPage() {
         <Tabs defaultValue={isAdmin ? "players" : "matches"}>
           <div className="w-full overflow-x-auto overflow-y-hidden touch-pan-x py-px -my-px">
             <TabsList className="w-max">
-              {isAdmin && (
-                <TabsTrigger value="players">
-                  Oyuncular
-                  <Badge variant="secondary" className="ml-2 text-xs">{playerCount}</Badge>
-                </TabsTrigger>
-              )}
-              {isAdmin && (
-                <TabsTrigger value="teams">
-                  Takımlar
-                  {disabledTeamCount > 0 && (
-                    <Badge variant="destructive" className="ml-2 text-xs">{disabledTeamCount} devre dışı</Badge>
-                  )}
-                </TabsTrigger>
-              )}
+              <TabsTrigger value="players">
+                Oyuncular
+                <Badge variant="secondary" className="ml-2 text-xs">{playerCount}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="teams">
+                Takımlar
+                {disabledTeamCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 text-xs">{disabledTeamCount} devre dışı</Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="matches">Maçlar</TabsTrigger>
             </TabsList>
           </div>
 
-          {isAdmin && (
-            <TabsContent value="players" className="space-y-4">
-              <PlayersTab />
-            </TabsContent>
-          )}
+          <TabsContent value="players" className="space-y-4">
+            <PlayersTab isAdmin={isAdmin} />
+          </TabsContent>
 
-          {isAdmin && (
-            <TabsContent value="teams" className="space-y-4">
-              <TeamsTab />
-            </TabsContent>
-          )}
+          <TabsContent value="teams" className="space-y-4">
+            <TeamsTab />
+          </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
             <MatchesTab />

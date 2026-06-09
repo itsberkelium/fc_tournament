@@ -191,7 +191,7 @@ hasn't been run.
 - API routes use `verifyAdminRequest()` (admin-only) or `verifyStaffRequest()` (admin or moderator) from `lib/admin-guard.ts`
 - Score routes (`PATCH`/`DELETE /api/admin/matches/[id]`) accept both roles via `verifyStaffRequest()`
 - Role in `sessionStorage` is UI-only (tabs, Settings link visibility); actual authorization always re-verifies the password server-side
-- Moderator UI: only Matches tab visible, Settings page redirects to `/admin`
+- Moderator UI: all three tabs visible; Players tab is read-only (no edit/delete/start-tournament); Teams tab can enable/disable teams; Settings page redirects to `/admin`
 
 ### Player Authentication
 - Name-only (no passwords)

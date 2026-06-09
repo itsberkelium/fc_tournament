@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { verifyAdminRequest } from "@/lib/admin-guard";
+import { verifyStaffRequest } from "@/lib/admin-guard";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ teamId: string }> }) {
-  const error = verifyAdminRequest(request);
+  const error = verifyStaffRequest(request);
   if (error) return error;
 
   const { teamId } = await params;
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ teamId: string }> }) {
-  const error = verifyAdminRequest(request);
+  const error = verifyStaffRequest(request);
   if (error) return error;
 
   const { teamId } = await params;
