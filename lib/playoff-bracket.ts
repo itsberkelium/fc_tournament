@@ -10,6 +10,60 @@ function loserId(m: { homeScore: number; awayScore: number; homePlayerId: string
   return m.homeScore >= m.awayScore ? m.awayPlayerId : m.homePlayerId;
 }
 
+/**
+ * When an already-completed playoff match has its score corrected and the winner
+ * changes, update the downstream bracket: swap the old winner out of the next-round
+ * match and put the new winner in. Also fixes the third-place match if the updated
+ * match was a semi-final.
+ */
+export async function updateBracketAfterScoreChange(
+  match: Match,
+  oldWinnerId: string,
+  newWinnerId: string
+): Promise<void> {
+  const slot = match.bracketSlot;
+  if (slot === null || slot < 0) return;
+
+  const oldLoserId = oldWinnerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId;
+  const newLoserId = newWinnerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId;
+
+  const nextRound = match.round + 1;
+  const nextSlot = Math.floor(slot / 2);
+
+  // Update winner in next-round match
+  const nextMatch = await db.match.findFirst({
+    where: { isPlayoff: true, round: nextRound, bracketSlot: nextSlot },
+  });
+
+  if (nextMatch) {
+    const winnerUpdate: Record<string, string> = {};
+    if (nextMatch.homePlayerId === oldWinnerId) winnerUpdate.homePlayerId = newWinnerId;
+    else if (nextMatch.awayPlayerId === oldWinnerId) winnerUpdate.awayPlayerId = newWinnerId;
+    if (Object.keys(winnerUpdate).length > 0) {
+      await db.match.update({ where: { id: nextMatch.id }, data: winnerUpdate });
+    }
+  }
+
+  // If this was a semi-final, also update the loser in the third-place match
+  const settingRow = await db.settings.findUnique({ where: { key: "playoffTeamCount" } });
+  const teamCount = parseInt(settingRow?.value ?? "4", 10);
+  const totalRounds = getTotalRounds(teamCount);
+
+  if (nextRound === totalRounds) {
+    const thirdPlace = await db.match.findFirst({
+      where: { isPlayoff: true, round: totalRounds, bracketSlot: -1 },
+    });
+    if (thirdPlace) {
+      const loserUpdate: Record<string, string> = {};
+      if (thirdPlace.homePlayerId === oldLoserId) loserUpdate.homePlayerId = newLoserId;
+      else if (thirdPlace.awayPlayerId === oldLoserId) loserUpdate.awayPlayerId = newLoserId;
+      if (Object.keys(loserUpdate).length > 0) {
+        await db.match.update({ where: { id: thirdPlace.id }, data: loserUpdate });
+      }
+    }
+  }
+}
+
 export async function advancePlayoffBracket(
   existing: Match,
   homeScore: number,

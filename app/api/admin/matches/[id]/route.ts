@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { verifyStaffRequest } from "@/lib/admin-guard";
-import { advancePlayoffBracket } from "@/lib/playoff-bracket";
+import { advancePlayoffBracket, updateBracketAfterScoreChange } from "@/lib/playoff-bracket";
 import { scoreSchema, validationError } from "@/lib/validation";
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -50,6 +50,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (!existing.isCompleted) {
       await advancePlayoffBracket(existing, homeScore, awayScore);
+    } else if (existing.isPlayoff && existing.bracketSlot !== null && existing.bracketSlot >= 0) {
+      // Match was already completed — check if the winner changed and propagate downstream
+      const oldWinnerId = existing.homeScore! >= existing.awayScore!
+        ? existing.homePlayerId
+        : existing.awayPlayerId;
+      const newWinnerId = homeScore >= awayScore ? existing.homePlayerId : existing.awayPlayerId;
+      if (oldWinnerId !== newWinnerId) {
+        await updateBracketAfterScoreChange(existing, oldWinnerId, newWinnerId);
+      }
     }
 
     return NextResponse.json({ success: true, match });
