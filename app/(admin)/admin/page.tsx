@@ -82,7 +82,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            <MatchesTab />
+            <MatchesTab isAdmin={isAdmin} />
           </TabsContent>
         </Tabs>
       </main>

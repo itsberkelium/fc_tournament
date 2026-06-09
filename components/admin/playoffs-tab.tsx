@@ -39,7 +39,7 @@ type PlayoffData = {
   };
 };
 
-export function PlayoffsTab() {
+export function PlayoffsTab({ isAdmin = false }: { isAdmin?: boolean }) {
   const { password } = useAdminStore();
   const [data, setData] = useState<PlayoffData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -194,7 +194,7 @@ export function PlayoffsTab() {
             ? "Playoff aktif."
             : "Lig tamamlandı — playoff başlatılabilir."}
         </p>
-        {!playoffStarted && (
+        {isAdmin && !playoffStarted && (
           <Button onClick={handleStart} disabled={!leagueComplete || isStarting}>
             {isStarting ? "Başlatılıyor..." : "Playoff Başlat"}
           </Button>
