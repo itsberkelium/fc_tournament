@@ -376,7 +376,7 @@ environment, so use manual SQL files rather than `prisma migrate dev`).
 - **Bracket slot -1:** The third-place match always uses `bracketSlot = -1` to distinguish it from regular bracket matches
 - **`isPlayoff` flag:** Separates league matches (round = matchday) from playoff matches (round = bracket round)
 - **Standings sort:** Disqualified players always at bottom regardless of points; -99 is just a visual representation
-- **Score entry blocked when:** player's `canEnterScore = false`, OR either player `isDisqualified`, OR player is `isDisabled`, OR the match's round is not the current active matchday (first round with any incomplete league match). Past matchdays are locked once the next matchday has any completed score. Admin is exempt from all these restrictions.
+- **Score entry blocked when:** player's `canEnterScore = false`, OR either player `isDisqualified`, OR player is `isDisabled`. Admin is exempt from all these restrictions.
 - **Draft race condition:** If two players lock in the same team simultaneously, the second gets a 409 and their roll is refunded
 - **No `gh` CLI available** — use `mcp__github__*` tools for all GitHub interactions
 - **Commit author:** Always run `git config user.email noreply@anthropic.com && git config user.name Claude` and `git commit --amend --no-edit --reset-author` after committing, or the stop hook will flag unverified commits
