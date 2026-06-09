@@ -7,8 +7,8 @@ export default async function FixturesPage() {
   const [matches, settingsRows] = await Promise.all([
     db.match.findMany({
       include: {
-        homePlayer: { select: { id: true, playerName: true, teamId: true, teamName: true } },
-        awayPlayer: { select: { id: true, playerName: true, teamId: true, teamName: true } },
+        homePlayer: { select: { id: true, playerName: true, teamId: true, teamName: true, isDisqualified: true } },
+        awayPlayer: { select: { id: true, playerName: true, teamId: true, teamName: true, isDisqualified: true } },
       },
       orderBy: [{ round: "asc" }, { createdAt: "asc" }],
     }),

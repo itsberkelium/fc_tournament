@@ -7,7 +7,9 @@ A full-stack web application for managing a private EA FC 26 friendly league. Si
 - **Frictionless login** — enter a player name, no password or email required
 - **Draft Roulette** — randomly roll one of 55 EA FC 26 national teams (max 3 rolls), with race condition protection to prevent two players from claiming the same team
 - **Round-robin league** — automatic standings with points (W=3, D=1, L=0), goal difference, and live rankings
-- **Manual match resolution** — scores entered post-match to update the table
+- **Manual match resolution** — scores entered post-match to update the table; past matchdays lock once the next matchday starts
+- **Optional playoffs** — knockout bracket seeded from league standings, auto-advancing on score entry
+- **Admin panel** — player management, score overrides, disqualification, tournament controls
 
 ## Tech Stack
 
@@ -89,22 +91,33 @@ app/
     login/        # Player login page
     draft/        # Team draft roulette
     dashboard/    # League standings
-  api/
-    players/
-      me/         # GET — look up player by name
-      lock-in/    # POST — assign a national team to a player
+    fixtures/     # Match schedule and score entry
+    playoffs/     # Knockout bracket
+  (admin)/
+    admin/        # Admin dashboard (players, matches, playoffs)
+    admin/login/  # Admin password entry
+    admin/settings/
+  api/            # Route handlers (public + admin)
 lib/
   db.ts           # Prisma singleton
+  api.ts          # Client-side fetch wrappers
+  standings.ts    # League table computation
+  playoffs.ts     # Bracket helpers
   teams.json      # All 55 FC 26 national teams
-  player-storage.ts  # localStorage helpers
+  stores/         # Zustand stores (adminStore, playerStore)
 prisma/
   schema.prisma   # Database schema
+  generated/      # Prisma client output (import from @/prisma/generated)
 ```
 
 ## Database Schema
 
-**Player** — `id`, `playerName`, `teamId` (unique), `teamName`, `createdAt`
+**Player** — `id`, `playerName`, `teamId` (unique), `teamName`, `createdAt`, `isDisabled`, `isDisqualified`, `canEnterScore`
 
-**Match** — `id`, `homePlayerId`, `awayPlayerId`, `homeScore`, `awayScore`, `round`, `isCompleted`, `createdAt`
+**Match** — `id`, `homePlayerId`, `awayPlayerId`, `homeScore`, `awayScore`, `round`, `isCompleted`, `isPlayoff`, `bracketSlot`, `createdAt`
+
+**DisabledTeam** — `teamId` (blocks team from appearing in draft)
+
+**Settings** — `key`, `value` (tournamentName, registrationLocked, playoffEnabled, playoffTeamCount)
 
 **Goal** — `id`, `matchId`, `scorerId`, `assistantId`, `isOwnGoal`
