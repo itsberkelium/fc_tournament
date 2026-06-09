@@ -116,8 +116,8 @@ export function MatchCard({
         </div>
       </div>
 
-      {/* Action row — only for my matches */}
-      {isMyMatch && (
+      {/* Action row — only for my matches, hidden if either player is disqualified */}
+      {isMyMatch && !match.homePlayer.isDisqualified && !match.awayPlayer.isDisqualified && (
         <div className="flex justify-center gap-2">
           {isEditing ? (
             <>

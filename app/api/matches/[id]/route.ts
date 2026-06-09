@@ -13,8 +13,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const match = await db.match.findUnique({
       where: { id },
       include: {
-        homePlayer: { select: { playerName: true, canEnterScore: true } },
-        awayPlayer: { select: { playerName: true, canEnterScore: true } },
+        homePlayer: { select: { playerName: true, canEnterScore: true, isDisqualified: true } },
+        awayPlayer: { select: { playerName: true, canEnterScore: true, isDisqualified: true } },
       },
     });
 
@@ -25,6 +25,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const isInMatch = homeMatch || awayMatch;
 
     if (!isInMatch) return NextResponse.json({ message: "Bu maçı güncelleme yetkin yok." }, { status: 403 });
+
+    if (match.homePlayer.isDisqualified || match.awayPlayer.isDisqualified) {
+      return NextResponse.json({ message: "Bu maçın skoru girilemez." }, { status: 403 });
+    }
 
     const submittingPlayer = homeMatch ? match.homePlayer : match.awayPlayer;
     if (!submittingPlayer.canEnterScore) {
