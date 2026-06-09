@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
   const matches = await db.match.findMany({
     where: { isPlayoff: false },
     include: {
-      homePlayer: { select: { playerName: true, teamName: true } },
-      awayPlayer: { select: { playerName: true, teamName: true } },
+      homePlayer: { select: { playerName: true, teamName: true, isDisqualified: true } },
+      awayPlayer: { select: { playerName: true, teamName: true, isDisqualified: true } },
     },
     orderBy: { createdAt: "asc" },
   });

@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Flag } from "@/components/flag";
 
 export type MatchPlayer = {
@@ -9,6 +10,7 @@ export type MatchPlayer = {
   playerName: string;
   teamId: string;
   teamName: string;
+  isDisqualified?: boolean;
 };
 
 export type Match = {
@@ -55,9 +57,12 @@ export function MatchCard({
         {/* Home */}
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
           <div className="text-right min-w-0">
-            <p className={`text-sm leading-none truncate ${isMyMatch && match.homePlayer.playerName === currentPlayerName ? "font-semibold" : ""}`}>
-              {match.homePlayer.teamName}
-            </p>
+            <div className="flex items-center justify-end gap-1.5">
+              {match.homePlayer.isDisqualified && <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">DSK</Badge>}
+              <p className={`text-sm leading-none truncate ${isMyMatch && match.homePlayer.playerName === currentPlayerName ? "font-semibold" : ""}`}>
+                {match.homePlayer.teamName}
+              </p>
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.homePlayer.playerName}</p>
           </div>
           <Flag teamId={match.homePlayer.teamId} teamName={match.homePlayer.teamName} />
@@ -100,9 +105,12 @@ export function MatchCard({
         <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
           <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
           <div className="min-w-0">
-            <p className={`text-sm leading-none truncate ${isMyMatch && match.awayPlayer.playerName === currentPlayerName ? "font-semibold" : ""}`}>
-              {match.awayPlayer.teamName}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className={`text-sm leading-none truncate ${isMyMatch && match.awayPlayer.playerName === currentPlayerName ? "font-semibold" : ""}`}>
+                {match.awayPlayer.teamName}
+              </p>
+              {match.awayPlayer.isDisqualified && <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">DSK</Badge>}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5 truncate">{match.awayPlayer.playerName}</p>
           </div>
         </div>
