@@ -185,9 +185,13 @@ hasn't been run.
 - Players cannot submit scores for matches involving a disqualified player
 
 ### Admin Authentication
-- Single shared password stored in `process.env.ADMIN_PASSWORD`
-- Client stores it in `sessionStorage` (`fc26_admin`, `fc26_admin_pw`)
-- API routes check `Authorization: Bearer <password>` header via `verifyAdminRequest()`
+- Two roles: `admin` (full access) and `moderator` (score editing only)
+- `ADMIN_PASSWORD` env var grants admin role; `MODERATOR_PASSWORD` env var grants moderator role (optional — if unset, only admin login works)
+- `/api/admin/auth` returns `{ role }` which the client stores in `sessionStorage` (`fc26_admin_role`) alongside the password
+- API routes use `verifyAdminRequest()` (admin-only) or `verifyStaffRequest()` (admin or moderator) from `lib/admin-guard.ts`
+- Score routes (`PATCH`/`DELETE /api/admin/matches/[id]`) accept both roles via `verifyStaffRequest()`
+- Role in `sessionStorage` is UI-only (tabs, Settings link visibility); actual authorization always re-verifies the password server-side
+- Moderator UI: only Matches tab visible, Settings page redirects to `/admin`
 
 ### Player Authentication
 - Name-only (no passwords)

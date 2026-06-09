@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { verifyAdminRequest } from "@/lib/admin-guard";
+import { verifyStaffRequest } from "@/lib/admin-guard";
 import { advancePlayoffBracket } from "@/lib/playoff-bracket";
 import { scoreSchema, validationError } from "@/lib/validation";
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const error = verifyAdminRequest(request);
+  const error = verifyStaffRequest(request);
   if (error) return error;
 
   const { id } = await params;
@@ -26,7 +26,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const error = verifyAdminRequest(request);
+  const error = verifyStaffRequest(request);
   if (error) return error;
 
   const { id } = await params;

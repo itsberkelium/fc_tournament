@@ -9,7 +9,7 @@ import { TournamentNameSection } from "@/components/admin/settings/tournament-na
 import { RegistrationLockSection } from "@/components/admin/settings/registration-lock-section";
 import { ExportSection } from "@/components/admin/settings/export-section";
 import { ResetSection } from "@/components/admin/settings/reset-section";
-import { getAdminSession, clearAdminSession } from "@/lib/admin-auth";
+import { getAdminSession, clearAdminSession, getAdminRole } from "@/lib/admin-auth";
 import { useAdminStore } from "@/lib/stores/admin-store";
 
 export default function AdminSettingsPage() {
@@ -20,8 +20,8 @@ export default function AdminSettingsPage() {
   const [registrationLocked, setRegistrationLocked] = useState(false);
 
   useEffect(() => {
-    if (!getAdminSession()) {
-      router.replace("/admin/login");
+    if (!getAdminSession() || getAdminRole() !== "admin") {
+      router.replace("/admin");
       return;
     }
     init();

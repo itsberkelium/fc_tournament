@@ -32,7 +32,8 @@ export default function AdminLoginPage() {
       });
 
       if (res.ok) {
-        setAdminSession(password);
+        const data = await res.json();
+        setAdminSession(password, data.role);
         router.replace("/admin");
       } else {
         setError("Hatalı şifre.");
