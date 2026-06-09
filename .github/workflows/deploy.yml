@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - master
+      - dev
 
 jobs:
-  deploy:
+  deploy-prod:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy to Hetzner
+      - name: Deploy to production
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -19,3 +20,17 @@ jobs:
           script: |
             cd ${{ secrets.APP_DIR }}
             ./deploy.sh
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to dev
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          password: ${{ secrets.HETZNER_PASS }}
+          script: |
+            cd ${{ secrets.DEV_APP_DIR }}
+            ./deploy-dev.sh

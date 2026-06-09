@@ -98,7 +98,7 @@ export default async function PlayoffsPage() {
           ? (dbThird.homeScore! >= dbThird.awayScore! ? dbThird.homePlayerId : dbThird.awayPlayerId)
           : null,
       };
-    } else if (playoffStarted) {
+    } else {
       thirdPlaceMatch = {
         slot: -1,
         id: null,

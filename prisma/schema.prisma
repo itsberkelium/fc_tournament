@@ -12,7 +12,10 @@ model Player {
   playerName String
   teamId     String   @unique // Ensures one unique national team per player
   teamName   String
-  createdAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+  isDisabled     Boolean  @default(false)
+  isDisqualified Boolean  @default(false)
+  canEnterScore  Boolean  @default(true)
 
   // Relations for match tracking
   matchesAsHome Match[] @relation("HomePlayer")

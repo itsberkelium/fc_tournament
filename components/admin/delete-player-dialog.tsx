@@ -8,6 +8,9 @@ export type Player = {
   playerName: string;
   teamName: string;
   createdAt: string;
+  isDisabled: boolean;
+  isDisqualified: boolean;
+  canEnterScore: boolean;
 };
 
 type DeletePlayerDialogProps = {

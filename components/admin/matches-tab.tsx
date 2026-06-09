@@ -15,8 +15,8 @@ type Match = {
   isCompleted: boolean;
   homeScore: number | null;
   awayScore: number | null;
-  homePlayer: { playerName: string; teamName: string };
-  awayPlayer: { playerName: string; teamName: string };
+  homePlayer: { playerName: string; teamName: string; isDisqualified: boolean };
+  awayPlayer: { playerName: string; teamName: string; isDisqualified: boolean };
 };
 
 export function MatchesTab() {
@@ -139,11 +139,17 @@ export function MatchesTab() {
                     return (
                       <TableRow key={match.id}>
                         <TableCell>
-                          <div className="font-medium">{match.homePlayer.playerName}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium">{match.homePlayer.playerName}</span>
+                            {match.homePlayer.isDisqualified && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">DSK</Badge>}
+                          </div>
                           <div className="text-xs text-muted-foreground">{match.homePlayer.teamName}</div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{match.awayPlayer.playerName}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium">{match.awayPlayer.playerName}</span>
+                            {match.awayPlayer.isDisqualified && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">DSK</Badge>}
+                          </div>
                           <div className="text-xs text-muted-foreground">{match.awayPlayer.teamName}</div>
                         </TableCell>
                         <TableCell className="text-center">

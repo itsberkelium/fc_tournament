@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Flag } from "@/components/flag";
 import type { StandingRow } from "@/lib/standings";
 
@@ -31,13 +32,16 @@ export function LeaderboardTable({ standings, currentPlayerName }: LeaderboardTa
           {standings.map((row, i) => {
             const isCurrentPlayer = row.playerName === currentPlayerName;
             return (
-              <TableRow key={row.playerId} className={isCurrentPlayer ? "bg-primary/5 font-medium" : ""}>
+              <TableRow key={row.playerId} className={isCurrentPlayer ? "bg-primary/5 font-medium" : row.isDisqualified ? "opacity-60" : ""}>
                 <TableCell className="text-center text-muted-foreground tabular-nums text-sm">{i + 1}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3 min-w-0">
                     <Flag teamId={row.teamId} teamName={row.teamName} size={32} />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium leading-none truncate">{row.teamName}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium leading-none truncate">{row.teamName}</p>
+                        {row.isDisqualified && <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">DSK</Badge>}
+                      </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{row.playerName}</p>
                     </div>
                   </div>
