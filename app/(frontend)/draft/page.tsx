@@ -13,6 +13,7 @@ import {
   getDraftState,
   setDraftState,
   clearDraftState,
+  clearStoredPlayer,
 } from "@/lib/player-storage";
 import { playerApi, adminApi } from "@/lib/api";
 import teams from "@/lib/teams.json";
@@ -127,6 +128,16 @@ export default function DraftPage() {
               Turnuva başladı. Artık takım seçimi yapılamaz.
             </AlertDescription>
           </Alert>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              clearStoredPlayer();
+              router.replace("/login");
+            }}
+          >
+            Çıkış Yap
+          </Button>
         </div>
       </div>
     );

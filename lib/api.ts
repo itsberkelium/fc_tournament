@@ -11,10 +11,11 @@ export type PlayerInfo = {
 };
 
 export type MeResponse = {
-  exists: boolean;
-  hasTeam: boolean;
+  exists?: boolean;
+  hasTeam?: boolean;
   registrationLocked?: boolean;
   player?: PlayerInfo;
+  message?: string;
 };
 
 export type ClaimedTeamsResponse = {

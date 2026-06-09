@@ -56,6 +56,9 @@ export default function LoginPage() {
       } else if (data.registrationLocked) {
         setError("Kayıt şu an kapalı. Yöneticiyle iletişime geç.");
         setIsSubmitting(false);
+      } else if (data.message) {
+        setError(data.message);
+        setIsSubmitting(false);
       } else {
         setStoredPlayer({ playerName: trimmed });
         router.replace("/draft");
