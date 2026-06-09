@@ -20,7 +20,7 @@ function SortButton({ label, field, current, dir, onSort }: {
 }) {
   const active = current === field;
   return (
-    <button onClick={() => onSort(field)} className={`flex items-center gap-1 hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+    <button onClick={() => onSort(field)} className={`flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer ${active ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
       {label}
       <span className="text-xs">{active ? (dir === "asc" ? "↑" : "↓") : "↕"}</span>
     </button>

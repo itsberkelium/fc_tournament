@@ -15,13 +15,13 @@ export function FixtureToolbar({ viewMode, myMatchesOnly, onViewChange, onMyMatc
       <div className="flex rounded-md border border-border overflow-hidden text-xs font-medium shrink-0">
         <button
           onClick={() => onViewChange("day")}
-          className={`px-3 py-1.5 transition-colors ${viewMode === "day" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          className={`px-3 py-1.5 transition-colors cursor-pointer ${viewMode === "day" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
           Günlük
         </button>
         <button
           onClick={() => onViewChange("all")}
-          className={`px-3 py-1.5 border-l border-border transition-colors ${viewMode === "all" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          className={`px-3 py-1.5 border-l border-border transition-colors cursor-pointer ${viewMode === "all" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
           Tümü
         </button>
@@ -29,7 +29,7 @@ export function FixtureToolbar({ viewMode, myMatchesOnly, onViewChange, onMyMatc
 
       <button
         onClick={onMyMatchesToggle}
-        className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border transition-colors ${myMatchesOnly ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+        className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border transition-colors cursor-pointer ${myMatchesOnly ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
       >
         Maçlarım
       </button>

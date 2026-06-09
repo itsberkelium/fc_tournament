@@ -129,7 +129,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
                 <button
                   onClick={() => setSelectedDay(matchdays[dayIndex - 1])}
                   disabled={dayIndex <= 0}
-                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 >
                   ←
                 </button>
@@ -146,7 +146,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
                 <button
                   onClick={() => setSelectedDay(matchdays[dayIndex + 1])}
                   disabled={dayIndex >= matchdays.length - 1}
-                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 >
                   →
                 </button>

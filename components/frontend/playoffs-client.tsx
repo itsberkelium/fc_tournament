@@ -339,7 +339,7 @@ export function PlayoffsClient({
                     view === "list"
                       ? "bg-primary text-primary-foreground font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
+                  } cursor-pointer`}
                 >
                   Liste
                 </button>
@@ -350,7 +350,7 @@ export function PlayoffsClient({
                     view === "bracket"
                       ? "bg-primary text-primary-foreground font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
+                  } cursor-pointer`}
                 >
                   Turnuva
                 </button>
