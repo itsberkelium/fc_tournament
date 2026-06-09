@@ -137,7 +137,17 @@ export function PlayersTab() {
             ) : (
               filteredPlayers.map((player) => (
                 <TableRow key={player.id}>
-                  <TableCell className="font-medium">{player.playerName}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{player.playerName}</span>
+                      {player.isDisqualified && (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Diskalifiye</Badge>
+                      )}
+                      {!player.isDisqualified && player.isDisabled && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Devre Dışı</Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{player.teamName}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {new Date(player.createdAt).toLocaleDateString("tr-TR")}
