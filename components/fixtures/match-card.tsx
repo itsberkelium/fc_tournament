@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,39 +18,51 @@ export type Match = {
   id: string;
   round: number;
   isCompleted: boolean;
+  isPlayoff: boolean;
   homeScore: number | null;
   awayScore: number | null;
   homePlayer: MatchPlayer;
   awayPlayer: MatchPlayer;
 };
 
-type ScoreInput = { home: string; away: string };
-
 type MatchCardProps = {
   match: Match;
   currentPlayerName?: string;
-  scoreInput?: ScoreInput;
-  isSaving: boolean;
-  onScoreChange: (matchId: string, field: "home" | "away", value: string) => void;
-  onSave: (matchId: string) => void;
-  onEdit: (match: Match) => void;
-  onCancelEdit: (matchId: string) => void;
+  onSave: (matchId: string, homeScore: number, awayScore: number) => Promise<boolean>;
 };
 
-export function MatchCard({
-  match,
-  currentPlayerName,
-  scoreInput,
-  isSaving,
-  onScoreChange,
-  onSave,
-  onEdit,
-  onCancelEdit,
-}: MatchCardProps) {
+export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) {
+  const [scoreInput, setScoreInput] = useState<{ home: string; away: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   const isMyMatch =
     !!currentPlayerName &&
     (match.homePlayer.playerName === currentPlayerName || match.awayPlayer.playerName === currentPlayerName);
-  const isEditing = scoreInput !== undefined;
+  const isEditing = scoreInput !== null;
+
+  function handleEdit() {
+    setScoreInput({
+      home: match.homeScore?.toString() ?? "",
+      away: match.awayScore?.toString() ?? "",
+    });
+  }
+
+  function handleCancel() {
+    setScoreInput(null);
+  }
+
+  async function handleSave() {
+    if (!scoreInput || scoreInput.home === "" || scoreInput.away === "") return;
+    setIsSaving(true);
+    try {
+      const ok = await onSave(match.id, Number(scoreInput.home), Number(scoreInput.away));
+      if (ok) setScoreInput(null);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  const isDraw = scoreInput !== null && scoreInput.home !== "" && scoreInput.away !== "" && scoreInput.home === scoreInput.away;
 
   return (
     <div className={`px-4 py-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}>
@@ -79,7 +92,7 @@ export function MatchCard({
                 className="w-12 text-center px-1"
                 placeholder="0"
                 value={scoreInput.home}
-                onChange={(e) => onScoreChange(match.id, "home", e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setScoreInput((prev) => prev && ({ ...prev, home: e.target.value.replace(/\D/g, "") }))}
               />
               <span className="text-muted-foreground text-sm">–</span>
               <Input
@@ -89,7 +102,7 @@ export function MatchCard({
                 className="w-12 text-center px-1"
                 placeholder="0"
                 value={scoreInput.away}
-                onChange={(e) => onScoreChange(match.id, "away", e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setScoreInput((prev) => prev && ({ ...prev, away: e.target.value.replace(/\D/g, "") }))}
               />
             </div>
           ) : match.isCompleted ? (
@@ -123,17 +136,17 @@ export function MatchCard({
             <>
               <Button
                 size="sm"
-                disabled={isSaving || scoreInput.home === "" || scoreInput.away === ""}
-                onClick={() => onSave(match.id)}
+                disabled={isSaving || scoreInput.home === "" || scoreInput.away === "" || (match.isPlayoff && isDraw)}
+                onClick={handleSave}
               >
                 {isSaving ? "Kaydediliyor..." : "Kaydet"}
               </Button>
-              <Button size="sm" variant="outline" disabled={isSaving} onClick={() => onCancelEdit(match.id)}>
+              <Button size="sm" variant="outline" disabled={isSaving} onClick={handleCancel}>
                 İptal
               </Button>
             </>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => onEdit(match)}>
+            <Button size="sm" variant="outline" onClick={handleEdit}>
               {match.isCompleted ? "Skoru Düzenle" : "Skor Gir"}
             </Button>
           )}

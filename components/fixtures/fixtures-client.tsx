@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
@@ -10,8 +10,6 @@ import { usePlayerStore } from "@/lib/stores/player-store";
 import { playerApi } from "@/lib/api";
 import type { Match } from "@/components/fixtures/match-card";
 
-type ScoreInput = { home: string; away: string };
-
 type FixturesClientProps = {
   initialMatches: Match[];
   tournamentName: string;
@@ -20,8 +18,6 @@ type FixturesClientProps = {
 
 export function FixturesClient({ initialMatches, tournamentName, playoffEnabled }: FixturesClientProps) {
   const [matches, setMatches] = useState(initialMatches);
-  const [scoreInputs, setScoreInputs] = useState<Record<string, ScoreInput>>({});
-  const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"day" | "all">("day");
   const [myMatchesOnly, setMyMatchesOnly] = useState(false);
   const { player } = usePlayerStore();
@@ -47,61 +43,25 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
       : list;
   }
 
-  function handleScoreChange(matchId: string, field: "home" | "away", value: string) {
-    setScoreInputs((prev) => ({
-      ...prev,
-      [matchId]: { ...prev[matchId], [field]: value },
-    }));
-  }
-
-  async function handleSave(matchId: string) {
-    if (!currentPlayerName) return;
-    const input = scoreInputs[matchId];
-    if (!input || input.home === "" || input.away === "") return;
-
-    setSavingMatchId(matchId);
-    try {
-      const res = await playerApi.submitMatchScore(matchId, {
-        playerName: currentPlayerName,
-        homeScore: Number(input.home),
-        awayScore: Number(input.away),
-      });
-      if (res.ok) {
-        setMatches((prev) =>
-          prev.map((m) =>
-            m.id === matchId
-              ? { ...m, homeScore: Number(input.home), awayScore: Number(input.away), isCompleted: true }
-              : m
-          )
-        );
-        setScoreInputs((prev) => {
-          const next = { ...prev };
-          delete next[matchId];
-          return next;
-        });
-      }
-    } finally {
-      setSavingMatchId(null);
-    }
-  }
-
-  function handleEdit(match: Match) {
-    setScoreInputs((prev) => ({
-      ...prev,
-      [match.id]: {
-        home: match.homeScore?.toString() ?? "",
-        away: match.awayScore?.toString() ?? "",
-      },
-    }));
-  }
-
-  function handleCancelEdit(matchId: string) {
-    setScoreInputs((prev) => {
-      const next = { ...prev };
-      delete next[matchId];
-      return next;
+  const handleSave = useCallback(async (matchId: string, homeScore: number, awayScore: number): Promise<boolean> => {
+    if (!currentPlayerName) return false;
+    const res = await playerApi.submitMatchScore(matchId, {
+      playerName: currentPlayerName,
+      homeScore,
+      awayScore,
     });
-  }
+    if (res.ok) {
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === matchId
+            ? { ...m, homeScore, awayScore, isCompleted: true }
+            : m
+        )
+      );
+      return true;
+    }
+    return false;
+  }, [currentPlayerName]);
 
   const tournamentStarted = matches.length > 0;
 
@@ -129,7 +89,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
                 <button
                   onClick={() => setSelectedDay(matchdays[dayIndex - 1])}
                   disabled={dayIndex <= 0}
-                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 >
                   ←
                 </button>
@@ -146,7 +106,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
                 <button
                   onClick={() => setSelectedDay(matchdays[dayIndex + 1])}
                   disabled={dayIndex >= matchdays.length - 1}
-                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="text-sm px-2 py-1 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 >
                   →
                 </button>
@@ -166,12 +126,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
                     isCurrentDay={day === currentMatchday}
                     showHeader={viewMode === "all"}
                     currentPlayerName={currentPlayerName}
-                    scoreInputs={scoreInputs}
-                    savingMatchId={savingMatchId}
-                    onScoreChange={handleScoreChange}
                     onSave={handleSave}
-                    onEdit={handleEdit}
-                    onCancelEdit={handleCancelEdit}
                   />
                 );
               })}
