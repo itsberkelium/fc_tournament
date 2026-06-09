@@ -256,7 +256,13 @@ export function PlayoffsClient({
               <>
                 <Button
                   size="sm"
-                  disabled={isSaving || !scoreInput || scoreInput.home === "" || scoreInput.away === ""}
+                  disabled={
+                    isSaving ||
+                    !scoreInput ||
+                    scoreInput.home === "" ||
+                    scoreInput.away === "" ||
+                    (scoreInput.home !== "" && scoreInput.away !== "" && scoreInput.home === scoreInput.away)
+                  }
                   onClick={() => match.id && handleSave(match.id)}
                 >
                   {isSaving ? "Kaydediliyor..." : "Kaydet"}

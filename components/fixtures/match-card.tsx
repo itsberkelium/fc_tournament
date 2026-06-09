@@ -17,6 +17,7 @@ export type Match = {
   id: string;
   round: number;
   isCompleted: boolean;
+  isPlayoff: boolean;
   homeScore: number | null;
   awayScore: number | null;
   homePlayer: MatchPlayer;
@@ -123,7 +124,12 @@ export function MatchCard({
             <>
               <Button
                 size="sm"
-                disabled={isSaving || scoreInput.home === "" || scoreInput.away === ""}
+                disabled={
+                  isSaving ||
+                  scoreInput.home === "" ||
+                  scoreInput.away === "" ||
+                  (match.isPlayoff && scoreInput.home !== "" && scoreInput.away !== "" && scoreInput.home === scoreInput.away)
+                }
                 onClick={() => onSave(match.id)}
               >
                 {isSaving ? "Kaydediliyor..." : "Kaydet"}

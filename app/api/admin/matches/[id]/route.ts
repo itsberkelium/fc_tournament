@@ -39,6 +39,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const existing = await db.match.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ message: "Maç bulunamadı." }, { status: 404 });
 
+    if (existing.isPlayoff && homeScore === awayScore) {
+      return NextResponse.json({ message: "Playoff maçları beraberlikle bitemez." }, { status: 400 });
+    }
+
     const match = await db.match.update({
       where: { id },
       data: { homeScore, awayScore, isCompleted: true },

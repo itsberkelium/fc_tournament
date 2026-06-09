@@ -26,6 +26,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (!isInMatch) return NextResponse.json({ message: "Bu maçı güncelleme yetkin yok." }, { status: 403 });
 
+    if (match.isPlayoff && homeScore === awayScore) {
+      return NextResponse.json({ message: "Playoff maçları beraberlikle bitemez." }, { status: 400 });
+    }
+
     if (match.homePlayer.isDisqualified || match.awayPlayer.isDisqualified) {
       return NextResponse.json({ message: "Bu maçın skoru girilemez." }, { status: 403 });
     }
