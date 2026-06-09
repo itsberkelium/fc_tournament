@@ -25,7 +25,7 @@ function SortButton({ label, field, current, dir, onSort }: {
   );
 }
 
-export function PlayersTab() {
+export function PlayersTab({ isAdmin = false }: { isAdmin?: boolean }) {
   const { password, tournamentStarted, setTournamentStarted, setPlayerCount } = useAdminStore();
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,7 +107,7 @@ export function PlayersTab() {
         <p className="text-sm text-muted-foreground">
           {tournamentStarted ? "Turnuva başladı — oyuncu kaydı kapalı." : `${players.length} oyuncu kayıtlı.`}
         </p>
-        {!tournamentStarted && (
+        {isAdmin && !tournamentStarted && (
           <Button onClick={() => setShowStartDialog(true)} disabled={isStarting || players.length < 2}>
             {isStarting ? "Başlatılıyor..." : "Turnuvayı Başlat"}
           </Button>
@@ -124,13 +124,13 @@ export function PlayersTab() {
               <TableHead><SortButton label="Oyuncu" field="name" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
               <TableHead><SortButton label="Takım" field="team" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
               <TableHead><SortButton label="Kayıt Tarihi" field="date" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
-              <TableHead className="w-[140px]" />
+              {isAdmin && <TableHead className="w-[140px]" />}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredPlayers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={isAdmin ? 4 : 3} className="text-center text-muted-foreground py-8">
                   {playerSearch ? "Sonuç bulunamadı." : "Henüz kayıtlı oyuncu yok."}
                 </TableCell>
               </TableRow>
@@ -152,12 +152,14 @@ export function PlayersTab() {
                   <TableCell className="text-muted-foreground text-sm">
                     {new Date(player.createdAt).toLocaleDateString("tr-TR")}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1.5">
-                      <Button variant="outline" size="sm" onClick={() => setEditTarget(player)}>Düzenle</Button>
-                      <Button variant="destructive" size="sm" disabled={tournamentStarted} onClick={() => setDeleteTarget(player)}>Sil</Button>
-                    </div>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" onClick={() => setEditTarget(player)}>Düzenle</Button>
+                        <Button variant="destructive" size="sm" disabled={tournamentStarted} onClick={() => setDeleteTarget(player)}>Sil</Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

@@ -19,7 +19,7 @@ type Match = {
   awayPlayer: { playerName: string; teamName: string; isDisqualified: boolean };
 };
 
-export function MatchesTab() {
+export function MatchesTab({ isAdmin = false }: { isAdmin?: boolean }) {
   const { password, tournamentStarted } = useAdminStore();
   const [view, setView] = useState<"league" | "playoff">("league");
   const [matches, setMatches] = useState<Match[]>([]);
@@ -90,7 +90,7 @@ export function MatchesTab() {
     return (
       <div className="space-y-4">
         {toggle}
-        <PlayoffsTab />
+        <PlayoffsTab isAdmin={isAdmin} />
       </div>
     );
   }

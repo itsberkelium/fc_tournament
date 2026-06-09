@@ -14,7 +14,8 @@ import { useAdminStore } from "@/lib/stores/admin-store";
 
 export default function AdminPage() {
   const router = useRouter();
-  const { init, isInitialized, playerCount, disabledTeamCount } = useAdminStore();
+  const { init, isInitialized, role, playerCount, disabledTeamCount } = useAdminStore();
+  const isAdmin = role === "admin";
 
   useEffect(() => {
     if (!getAdminSession()) {
@@ -45,15 +46,17 @@ export default function AdminPage() {
           <p className="text-xs text-muted-foreground">EA FC 26 Ligi</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/admin/settings">
-            <Button variant="ghost" size="sm">Ayarlar</Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/admin/settings">
+              <Button variant="ghost" size="sm">Ayarlar</Button>
+            </Link>
+          )}
           <Button variant="outline" size="sm" onClick={handleLogout}>Çıkış</Button>
         </div>
       </header>
 
       <main className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">
-        <Tabs defaultValue="players">
+        <Tabs defaultValue={isAdmin ? "players" : "matches"}>
           <div className="w-full overflow-x-auto overflow-y-hidden touch-pan-x py-px -my-px">
             <TabsList className="w-max">
               <TabsTrigger value="players">
@@ -71,7 +74,7 @@ export default function AdminPage() {
           </div>
 
           <TabsContent value="players" className="space-y-4">
-            <PlayersTab />
+            <PlayersTab isAdmin={isAdmin} />
           </TabsContent>
 
           <TabsContent value="teams" className="space-y-4">
@@ -79,7 +82,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            <MatchesTab />
+            <MatchesTab isAdmin={isAdmin} />
           </TabsContent>
         </Tabs>
       </main>

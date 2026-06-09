@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { getAdminPassword } from "@/lib/admin-auth";
+import { getAdminPassword, getAdminRole, type AdminRole } from "@/lib/admin-auth";
 import { adminApi } from "@/lib/api";
 
 interface AdminState {
   password: string;
+  role: AdminRole;
   tournamentStarted: boolean;
   playerCount: number;
   disabledTeamCount: number;
@@ -16,6 +17,7 @@ interface AdminState {
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   password: "",
+  role: "moderator",
   tournamentStarted: false,
   playerCount: 0,
   disabledTeamCount: 0,
@@ -24,7 +26,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   init: async () => {
     if (get().isInitialized) return;
     const pw = getAdminPassword();
-    set({ password: pw });
+    const role = getAdminRole();
+    set({ password: pw, role });
 
     const [playersData, statusData, teamsData] = await Promise.all([
       adminApi.getPlayers(pw),
