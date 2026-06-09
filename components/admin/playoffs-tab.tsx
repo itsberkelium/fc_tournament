@@ -154,7 +154,7 @@ export function PlayoffsTab({ isAdmin = false }: { isAdmin?: boolean }) {
           <div className="flex justify-center gap-2">
             {isEditing ? (
               <>
-                <Button size="sm" disabled={isSaving || !input.home || !input.away} onClick={() => handleSave(match.id!)}>
+                <Button size="sm" disabled={isSaving || !input.home || !input.away || input.home === input.away} onClick={() => handleSave(match.id!)}>
                   {isSaving ? "Kaydediliyor..." : "Kaydet"}
                 </Button>
                 <Button size="sm" variant="outline" disabled={isSaving}
