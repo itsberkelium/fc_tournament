@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DeletePlayerDialog, type Player } from "@/components/admin/delete-player-dialog";
+import { EditPlayerDialog } from "@/components/admin/edit-player-dialog";
 import { StartTournamentDialog } from "@/components/admin/start-tournament-dialog";
 import { useAdminStore } from "@/lib/stores/admin-store";
 import { adminApi } from "@/lib/api";
@@ -33,6 +34,7 @@ export function PlayersTab() {
   const [playerSortDir, setPlayerSortDir] = useState<"asc" | "desc">("asc");
   const [deleteTarget, setDeleteTarget] = useState<Player | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editTarget, setEditTarget] = useState<Player | null>(null);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export function PlayersTab() {
               <TableHead><SortButton label="Oyuncu" field="name" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
               <TableHead><SortButton label="Takım" field="team" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
               <TableHead><SortButton label="Kayıt Tarihi" field="date" current={playerSort} dir={playerSortDir} onSort={handleSort} /></TableHead>
-              <TableHead className="w-[80px]" />
+              <TableHead className="w-[140px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -141,7 +143,10 @@ export function PlayersTab() {
                     {new Date(player.createdAt).toLocaleDateString("tr-TR")}
                   </TableCell>
                   <TableCell>
-                    <Button variant="destructive" size="sm" disabled={tournamentStarted} onClick={() => setDeleteTarget(player)}>Sil</Button>
+                    <div className="flex gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => setEditTarget(player)}>Düzenle</Button>
+                      <Button variant="destructive" size="sm" disabled={tournamentStarted} onClick={() => setDeleteTarget(player)}>Sil</Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -150,6 +155,11 @@ export function PlayersTab() {
         </Table>
       </div>
 
+      <EditPlayerDialog
+        player={editTarget}
+        onClose={() => setEditTarget(null)}
+        onUpdated={(updated) => setPlayers((prev) => prev.map((p) => p.id === updated.id ? { ...p, ...updated } : p))}
+      />
       <StartTournamentDialog
         isOpen={showStartDialog}
         playerCount={players.length}

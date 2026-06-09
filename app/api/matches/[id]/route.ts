@@ -13,18 +13,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const match = await db.match.findUnique({
       where: { id },
       include: {
-        homePlayer: { select: { playerName: true } },
-        awayPlayer: { select: { playerName: true } },
+        homePlayer: { select: { playerName: true, canEnterScore: true } },
+        awayPlayer: { select: { playerName: true, canEnterScore: true } },
       },
     });
 
     if (!match) return NextResponse.json({ message: "Maç bulunamadı." }, { status: 404 });
 
-    const isInMatch =
-      match.homePlayer.playerName.toLowerCase() === playerName.toLowerCase() ||
-      match.awayPlayer.playerName.toLowerCase() === playerName.toLowerCase();
+    const homeMatch = match.homePlayer.playerName.toLowerCase() === playerName.toLowerCase();
+    const awayMatch = match.awayPlayer.playerName.toLowerCase() === playerName.toLowerCase();
+    const isInMatch = homeMatch || awayMatch;
 
     if (!isInMatch) return NextResponse.json({ message: "Bu maçı güncelleme yetkin yok." }, { status: 403 });
+
+    const submittingPlayer = homeMatch ? match.homePlayer : match.awayPlayer;
+    if (!submittingPlayer.canEnterScore) {
+      return NextResponse.json({ message: "Skor girişi izniniz yok." }, { status: 403 });
+    }
 
     const updated = await db.match.update({
       where: { id },

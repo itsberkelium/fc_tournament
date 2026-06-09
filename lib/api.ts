@@ -34,6 +34,11 @@ export type ScoreBody = { homeScore: number; awayScore: number };
 export type PlayerScoreBody = ScoreBody & { playerName: string };
 export type SettingsUpdateBody = { tournamentName?: string; registrationLocked?: string };
 
+export type PlayerUpdateBody =
+  | { action: "updatePermissions"; canEnterScore: boolean }
+  | { action: "toggleDisabled" }
+  | { action: "disqualify" };
+
 export const playerApi = {
   getMe: (playerName: string): Promise<MeResponse> =>
     fetch(`/api/players/me?playerName=${encodeURIComponent(playerName)}`).then((r) => r.json()),
@@ -62,6 +67,13 @@ export const adminApi = {
 
   deletePlayer: (id: string, pw: string) =>
     fetch(`/api/admin/players/${id}`, { method: "DELETE", headers: bearer(pw) }),
+
+  updatePlayer: (id: string, body: PlayerUpdateBody, pw: string) =>
+    fetch(`/api/admin/players/${id}`, {
+      method: "PATCH",
+      headers: bearer(pw),
+      body: JSON.stringify(body),
+    }),
 
   getTournamentStatus: (): Promise<TournamentStatusResponse> =>
     fetch("/api/admin/tournament/status").then((r) => r.json()),

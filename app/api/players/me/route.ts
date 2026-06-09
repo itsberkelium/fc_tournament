@@ -20,6 +20,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ exists: false, hasTeam: false, registrationLocked });
     }
 
+    if (player.isDisabled) {
+      return NextResponse.json({ message: "Hesabınız devre dışı bırakıldı." }, { status: 403 });
+    }
+
     return NextResponse.json({
       exists: true,
       hasTeam: !!player.teamId,
