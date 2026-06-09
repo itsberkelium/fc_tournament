@@ -35,6 +35,16 @@ export async function GET() {
   const standings = computeStandings(players, completedLeagueMatches);
   const seeds = standings.slice(0, teamCount);
 
+  function getMatchWinner(m: typeof playoffMatches[number] | undefined) {
+    if (!m || !m.isCompleted || m.homeScore === null || m.awayScore === null) return null;
+    return m.homeScore >= m.awayScore ? m.homePlayer : m.awayPlayer;
+  }
+
+  function getMatchLoser(m: typeof playoffMatches[number] | undefined) {
+    if (!m || !m.isCompleted || m.homeScore === null || m.awayScore === null) return null;
+    return m.homeScore >= m.awayScore ? m.awayPlayer : m.homePlayer;
+  }
+
   const rounds = [];
   for (let r = 1; r <= totalRounds; r++) {
     const matchCount = teamCount / Math.pow(2, r);
@@ -58,9 +68,9 @@ export async function GET() {
             ? (dbMatch.homeScore! >= dbMatch.awayScore! ? dbMatch.homePlayerId : dbMatch.awayPlayerId)
             : null,
         });
-      } else {
-        const homeSeed = r === 1 ? seeds[slot] ?? null : null;
-        const awaySeed = r === 1 ? seeds[teamCount - 1 - slot] ?? null : null;
+      } else if (r === 1) {
+        const homeSeed = seeds[slot] ?? null;
+        const awaySeed = seeds[teamCount - 1 - slot] ?? null;
         matches.push({
           slot,
           id: null,
@@ -71,6 +81,24 @@ export async function GET() {
           isCompleted: false,
           isPlaceholder: true,
           leagueNotDone: !leagueComplete,
+          winnerId: null,
+        });
+      } else {
+        // For rounds 2+, populate winners of already-completed feeder matches
+        const feederHome = playoffMatches.find((m) => m.round === r - 1 && m.bracketSlot === slot * 2);
+        const feederAway = playoffMatches.find((m) => m.round === r - 1 && m.bracketSlot === slot * 2 + 1);
+        const homePlayer = getMatchWinner(feederHome);
+        const awayPlayer = getMatchWinner(feederAway);
+        matches.push({
+          slot,
+          id: null,
+          homePlayer,
+          awayPlayer,
+          homeScore: null,
+          awayScore: null,
+          isCompleted: false,
+          isPlaceholder: !homePlayer && !awayPlayer,
+          leagueNotDone: false,
           winnerId: null,
         });
       }
@@ -96,14 +124,19 @@ export async function GET() {
           : null,
       };
     } else {
+      // Show known losers from completed semi-finals
+      const semi1 = playoffMatches.find((m) => m.round === totalRounds - 1 && m.bracketSlot === 0);
+      const semi2 = playoffMatches.find((m) => m.round === totalRounds - 1 && m.bracketSlot === 1);
+      const homeLoser = getMatchLoser(semi1);
+      const awayLoser = getMatchLoser(semi2);
       thirdPlaceMatch = {
         id: null,
-        homePlayer: null,
-        awayPlayer: null,
+        homePlayer: homeLoser,
+        awayPlayer: awayLoser,
         homeScore: null,
         awayScore: null,
         isCompleted: false,
-        isPlaceholder: true,
+        isPlaceholder: !homeLoser && !awayLoser,
         winnerId: null,
       };
     }
