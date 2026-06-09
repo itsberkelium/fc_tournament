@@ -1,14 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { Flag } from "@/components/flag";
 import { getFeederLabel, getThirdPlaceFeederLabel } from "@/lib/playoffs";
+import { playerApi } from "@/lib/api";
 
-type MatchPlayer = { id: string; playerName: string; teamId: string; teamName: string };
+type MatchPlayer = { id: string; playerName: string; teamId: string; teamName: string; isDisqualified?: boolean };
 
 type BracketMatch = {
   slot: number;
@@ -80,8 +84,46 @@ export function PlayoffsClient({
   const currentPlayerName = player?.playerName;
   const firstRoundMatchCount = bracket.rounds[0]?.matches.length ?? 1;
   const totalHeight = firstRoundMatchCount * BASE_SLOT_HEIGHT;
+  const router = useRouter();
 
   const [view, setView] = useState<"bracket" | "list">("bracket");
+  const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({});
+  const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+
+  function handleScoreChange(matchId: string, field: "home" | "away", value: string) {
+    setScoreInputs((prev) => ({ ...prev, [matchId]: { ...prev[matchId], [field]: value } }));
+  }
+
+  function handleEdit(matchId: string, homeScore: number | null, awayScore: number | null) {
+    setScoreInputs((prev) => ({
+      ...prev,
+      [matchId]: { home: homeScore?.toString() ?? "", away: awayScore?.toString() ?? "" },
+    }));
+  }
+
+  function handleCancelEdit(matchId: string) {
+    setScoreInputs((prev) => { const next = { ...prev }; delete next[matchId]; return next; });
+  }
+
+  async function handleSave(matchId: string) {
+    if (!currentPlayerName) return;
+    const input = scoreInputs[matchId];
+    if (!input || input.home === "" || input.away === "") return;
+    setSavingMatchId(matchId);
+    try {
+      const res = await playerApi.submitMatchScore(matchId, {
+        playerName: currentPlayerName,
+        homeScore: Number(input.home),
+        awayScore: Number(input.away),
+      });
+      if (res.ok) {
+        setScoreInputs((prev) => { const next = { ...prev }; delete next[matchId]; return next; });
+        router.refresh();
+      }
+    } finally {
+      setSavingMatchId(null);
+    }
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem("playoffs-view");
@@ -122,8 +164,18 @@ export function PlayoffsClient({
         ? `${teamCount - match.slot}. Sıra${match.leagueNotDone ? "*" : ""}`
         : getFeederLabel(round, bracket.totalRounds, match.slot, "away");
 
+    const canEnterScore =
+      isMyMatch &&
+      !match.isPlaceholder &&
+      match.id !== null &&
+      !match.homePlayer?.isDisqualified &&
+      !match.awayPlayer?.isDisqualified;
+    const isEditing = match.id !== null && scoreInputs[match.id] !== undefined;
+    const scoreInput = match.id !== null ? scoreInputs[match.id] : undefined;
+    const isSaving = match.id !== null && savingMatchId === match.id;
+
     return (
-      <div className={`rounded-md border border-border p-3 ${isMyMatch ? "bg-primary/5" : ""}`}>
+      <div className={`rounded-md border border-border p-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}>
         <div className="flex items-center gap-2">
           {/* Home */}
           <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
@@ -146,7 +198,29 @@ export function PlayoffsClient({
 
           {/* Score */}
           <div className="shrink-0 w-20 text-center">
-            {match.isCompleted ? (
+            {isEditing && scoreInput ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  className="w-10 text-center px-1"
+                  placeholder="0"
+                  value={scoreInput.home}
+                  onChange={(e) => match.id && handleScoreChange(match.id, "home", e.target.value.replace(/\D/g, ""))}
+                />
+                <span className="text-muted-foreground text-sm">–</span>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  className="w-10 text-center px-1"
+                  placeholder="0"
+                  value={scoreInput.away}
+                  onChange={(e) => match.id && handleScoreChange(match.id, "away", e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+            ) : match.isCompleted ? (
               <span className="text-sm font-bold tabular-nums">{match.homeScore} – {match.awayScore}</span>
             ) : (
               <span className="text-xs text-muted-foreground font-medium">
@@ -175,8 +249,36 @@ export function PlayoffsClient({
           </div>
         </div>
 
-        {match.isCompleted && match.winnerId && (
-          <div className="mt-2 text-center">
+        {/* Action row */}
+        {canEnterScore && (
+          <div className="flex justify-center gap-2">
+            {isEditing ? (
+              <>
+                <Button
+                  size="sm"
+                  disabled={isSaving || !scoreInput || scoreInput.home === "" || scoreInput.away === ""}
+                  onClick={() => match.id && handleSave(match.id)}
+                >
+                  {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </Button>
+                <Button size="sm" variant="outline" disabled={isSaving} onClick={() => match.id && handleCancelEdit(match.id)}>
+                  İptal
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => match.id && handleEdit(match.id, match.homeScore, match.awayScore)}
+              >
+                {match.isCompleted ? "Skoru Düzenle" : "Skor Gir"}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {match.isCompleted && match.winnerId && !isEditing && (
+          <div className="text-center">
             <Badge
               variant={!isThirdPlace && round === bracket.totalRounds ? "default" : "secondary"}
               className="text-xs"

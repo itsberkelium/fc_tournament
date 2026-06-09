@@ -22,8 +22,8 @@ export async function GET() {
     db.match.findMany({
       where: { isPlayoff: true },
       include: {
-        homePlayer: { select: { id: true, playerName: true, teamId: true, teamName: true } },
-        awayPlayer: { select: { id: true, playerName: true, teamId: true, teamName: true } },
+        homePlayer: { select: { id: true, playerName: true, teamId: true, teamName: true, isDisqualified: true } },
+        awayPlayer: { select: { id: true, playerName: true, teamId: true, teamName: true, isDisqualified: true } },
       },
     }),
   ]);
