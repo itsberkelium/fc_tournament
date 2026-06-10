@@ -157,7 +157,7 @@ hasn't been run.
 - Players visit `/login`, enter their name
 - First-time players are sent to `/draft` to roll for a national team (max 3 rolls)
 - Admin can lock registration to prevent new players
-- Admin can disable specific national teams from the draft pool
+- Admin can disable specific national teams from the draft pool (enforced server-side: lock-in rejects disabled teams with 403)
 
 **Phase 2 — League**
 - Admin starts tournament from `/admin` → Players tab
@@ -192,9 +192,10 @@ hasn't been run.
 - Score routes (`PATCH`/`DELETE /api/admin/matches/[id]`) accept both roles via `verifyStaffRequest()`
 - Role in `sessionStorage` is UI-only (tabs, Settings link visibility); actual authorization always re-verifies the password server-side
 - Moderator UI: all three tabs visible; Players tab is read-only (no edit/delete/start-tournament); Teams tab can enable/disable teams; Settings page redirects to `/admin`
+- Password checks use constant-time comparison (`crypto.timingSafeEqual`); `/api/admin/auth` is rate-limited per IP (10 attempts/minute → 429, in-memory per instance)
 
 ### Player Authentication
-- Name-only (no passwords)
+- Name-only (no passwords) — accepted trade-off: the app serves a private group of trusted friends, so score submission trusts the `playerName` in the request body
 - Player identity stored in `localStorage` (`fc26_player`)
 - `loadPlayer()` in playerStore validates against DB on every page load
 - Disabled players get 403 from `/api/players/me` and see an error on login
@@ -299,6 +300,7 @@ Fetches all `Settings` rows, merges with defaults: `{ tournamentName: "EA FC 26 
 Zod schemas used in API routes:
 - `scoreSchema` — `{ homeScore: int 0-99, awayScore: int 0-99 }`
 - `playerScoreSchema` — extends score with `{ playerName: string }`
+- `lockInSchema` — `{ playerName: trimmed string 1-50, teamId: trimmed string 1-100 }`
 - `tournamentStartSchema` — `{ doubleLegs: bool, playoffEnabled: bool, playoffTeamCount: int > 0 }`
 - `validationError(zodError)` — returns `NextResponse` 400 with joined issue messages
 
