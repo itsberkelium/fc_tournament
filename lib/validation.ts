@@ -10,6 +10,11 @@ export const playerScoreSchema = scoreSchema.extend({
   playerName: z.string().min(1),
 });
 
+export const lockInSchema = z.object({
+  playerName: z.string().trim().min(1).max(50),
+  teamId: z.string().trim().min(1).max(100),
+});
+
 export const tournamentStartSchema = z.object({
   doubleLegs: z.boolean(),
   playoffEnabled: z.boolean(),
