@@ -5,6 +5,8 @@ Read it entirely before touching any code.
 
 **Keeping this document current:** After any change that affects content already described here — schema columns, validation rules, API routes, business logic, conventions, deployment config — update the relevant section(s) of this file in the same commit. Do not update it for implementation details that aren't described here.
 
+**Deferred work:** Known issues and deferred improvements live in `TODO.md`. Check it before starting related work; tick off or remove entries you resolve.
+
 ---
 
 ## 1. What This Is
