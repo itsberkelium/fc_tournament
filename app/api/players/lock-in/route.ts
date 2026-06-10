@@ -2,21 +2,23 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import Teams from "@/lib/teams.json";
 import { Team } from "@/types/Team";
+import { lockInSchema, validationError } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const { playerName, teamId } = await request.json();
-
-    if (!playerName || !teamId) {
-      return NextResponse.json(
-        { message: "playerName and teamId must be strings." },
-        { status: 400 }
-      );
-    }
+    const body = await request.json().catch(() => ({}));
+    const parsed = lockInSchema.safeParse(body);
+    if (!parsed.success) return validationError(parsed.error);
+    const { playerName, teamId } = parsed.data;
 
     const lockSetting = await db.settings.findUnique({ where: { key: "registrationLocked" } });
     if (lockSetting?.value === "true") {
       return NextResponse.json({ message: "Kayıt şu an kapalı." }, { status: 403 });
+    }
+
+    const disabledTeam = await db.disabledTeam.findUnique({ where: { teamId } });
+    if (disabledTeam) {
+      return NextResponse.json({ message: "Bu takım seçilemez." }, { status: 403 });
     }
 
     const existingName = await db.player.findFirst({
