@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { LeaderboardTable } from "@/components/dashboard/leaderboard-table";
+import { SquadModal } from "@/components/dashboard/squad-modal";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { publicApi } from "@/lib/api";
 import type { StandingRow } from "@/lib/standings";
@@ -17,6 +18,7 @@ type DashboardClientProps = {
 
 export function DashboardClient({ initialStandings, tournamentName, tournamentStarted, playoffEnabled }: DashboardClientProps) {
   const [standings, setStandings] = useState(initialStandings);
+  const [selectedRow, setSelectedRow] = useState<StandingRow | null>(null);
   const { player } = usePlayerStore();
 
   const refreshStandings = useCallback(async () => {
@@ -52,9 +54,15 @@ export function DashboardClient({ initialStandings, tournamentName, tournamentSt
             </p>
           </div>
         ) : (
-          <LeaderboardTable standings={standings} currentPlayerName={player?.playerName} />
+          <LeaderboardTable
+            standings={standings}
+            currentPlayerName={player?.playerName}
+            onRowClick={setSelectedRow}
+          />
         )}
       </main>
+
+      <SquadModal row={selectedRow} onClose={() => setSelectedRow(null)} />
     </div>
   );
 }
