@@ -89,7 +89,7 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-12 text-center px-1"
+                className="w-14 h-10 text-center text-base px-1"
                 placeholder="0"
                 value={scoreInput.home}
                 onChange={(e) => setScoreInput((prev) => prev && ({ ...prev, home: e.target.value.replace(/\D/g, "") }))}
@@ -99,7 +99,7 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-12 text-center px-1"
+                className="w-14 h-10 text-center text-base px-1"
                 placeholder="0"
                 value={scoreInput.away}
                 onChange={(e) => setScoreInput((prev) => prev && ({ ...prev, away: e.target.value.replace(/\D/g, "") }))}
@@ -135,18 +135,18 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
           {isEditing ? (
             <>
               <Button
-                size="sm"
+                className="h-10 px-5 sm:h-8 sm:px-3"
                 disabled={isSaving || scoreInput.home === "" || scoreInput.away === "" || (match.isPlayoff && isDraw)}
                 onClick={handleSave}
               >
                 {isSaving ? "Kaydediliyor..." : "Kaydet"}
               </Button>
-              <Button size="sm" variant="outline" disabled={isSaving} onClick={handleCancel}>
+              <Button className="h-10 px-5 sm:h-8 sm:px-3" variant="outline" disabled={isSaving} onClick={handleCancel}>
                 İptal
               </Button>
             </>
           ) : (
-            <Button size="sm" variant="outline" onClick={handleEdit}>
+            <Button className="h-10 px-5 sm:h-8 sm:px-3" variant="outline" onClick={handleEdit}>
               {match.isCompleted ? "Skoru Düzenle" : "Skor Gir"}
             </Button>
           )}
