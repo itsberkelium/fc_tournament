@@ -146,6 +146,7 @@ export function SquadModal({ row, onClose }: Props) {
                     matches={matchesByRound[round] as Match[]}
                     isCurrentDay={false}
                     showHeader
+                    perspectivePlayerId={row?.playerId}
                     onSave={async (): Promise<boolean> => false}
                   />
                 ))}

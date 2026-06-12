@@ -7,6 +7,7 @@ type MatchdaySectionProps = {
   isCurrentDay: boolean;
   showHeader: boolean;
   currentPlayerName?: string;
+  perspectivePlayerId?: string;
   onSave: (matchId: string, homeScore: number, awayScore: number) => Promise<boolean>;
 };
 
@@ -16,6 +17,7 @@ export function MatchdaySection({
   isCurrentDay,
   showHeader,
   currentPlayerName,
+  perspectivePlayerId,
   onSave,
 }: MatchdaySectionProps) {
   const allDone = matches.every((m) => m.isCompleted);
@@ -36,6 +38,7 @@ export function MatchdaySection({
             key={match.id}
             match={match}
             currentPlayerName={currentPlayerName}
+            perspectivePlayerId={perspectivePlayerId}
             onSave={onSave}
           />
         ))}

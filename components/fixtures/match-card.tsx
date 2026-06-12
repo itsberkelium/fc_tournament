@@ -28,10 +28,11 @@ export type Match = {
 type MatchCardProps = {
   match: Match;
   currentPlayerName?: string;
+  perspectivePlayerId?: string;
   onSave: (matchId: string, homeScore: number, awayScore: number) => Promise<boolean>;
 };
 
-export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) {
+export function MatchCard({ match, currentPlayerName, perspectivePlayerId, onSave }: MatchCardProps) {
   const [scoreInput, setScoreInput] = useState<{ home: string; away: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -63,6 +64,17 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
   }
 
   const isDraw = scoreInput !== null && scoreInput.home !== "" && scoreInput.away !== "" && scoreInput.home === scoreInput.away;
+
+  let scoreColor = "";
+  if (perspectivePlayerId && match.isCompleted && match.homeScore !== null && match.awayScore !== null) {
+    const isHome = match.homePlayer.id === perspectivePlayerId;
+    const isAway = match.awayPlayer.id === perspectivePlayerId;
+    if (isHome || isAway) {
+      const myScore = isHome ? match.homeScore : match.awayScore;
+      const oppScore = isHome ? match.awayScore : match.homeScore;
+      scoreColor = myScore > oppScore ? "text-green-500" : myScore < oppScore ? "text-red-500" : "text-yellow-500";
+    }
+  }
 
   return (
     <div className={`px-4 py-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}>
@@ -106,7 +118,7 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
               />
             </div>
           ) : match.isCompleted ? (
-            <span className="text-sm font-bold tabular-nums w-16 inline-block">
+            <span className={`text-sm font-bold tabular-nums w-16 inline-block ${scoreColor}`}>
               {match.homeScore} – {match.awayScore}
             </span>
           ) : (
