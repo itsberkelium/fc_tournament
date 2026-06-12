@@ -74,6 +74,11 @@ export default function AdminSettingsPage() {
         <ExportSection tournamentName={tournamentName} />
         <Separator />
         <ResetSection />
+        <Separator />
+        <div>
+          <p className="text-sm font-medium mb-1">Versiyon</p>
+          <p className="text-2xl font-bold tabular-nums">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+        </div>
       </main>
     </div>
   );
