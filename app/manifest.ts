@@ -22,14 +22,14 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     theme_color: "#15803d",
     icons: [
       {
-        src: "/app-icon.png",
-        sizes: "1024x1024",
+        src: "/android-chrome-192x192.png",
+        sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/app-icon.png",
-        sizes: "1024x1024",
+        src: "/android-chrome-512x512.png",
+        sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
       },

@@ -30,9 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
     title: name,
     description: "FC Turnuva Yöneticisi",
     icons: {
-      icon: [{ url: "/app-icon.png", type: "image/png" }],
-      apple: [{ url: "/app-icon.png", sizes: "1024x1024", type: "image/png" }],
-      shortcut: "/app-icon.png",
+      icon: [
+        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      ],
+      apple: [{ url: "/apple-touch-icon.png", type: "image/png" }],
+      shortcut: "/favicon.ico",
     },
     appleWebApp: {
       capable: true,
