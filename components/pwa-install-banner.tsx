@@ -13,7 +13,12 @@ export function PwaInstallBanner() {
 
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY)) return;
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
+
+    // iOS uses navigator.standalone; other browsers use display-mode media query
+    const isStandalone =
+      (navigator as Navigator & { standalone?: boolean }).standalone === true ||
+      window.matchMedia("(display-mode: standalone)").matches;
+    if (isStandalone) return;
 
     const isIos =
       /iphone|ipad|ipod/i.test(navigator.userAgent) &&
