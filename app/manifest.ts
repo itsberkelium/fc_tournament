@@ -22,16 +22,10 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     theme_color: "#15803d",
     icons: [
       {
-        src: "/api/pwa-icon/192",
-        sizes: "192x192",
+        src: "/app-icon.png",
+        sizes: "1024x1024",
         type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/api/pwa-icon/512",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "maskable",
+        purpose: "any maskable",
       },
     ],
   };
