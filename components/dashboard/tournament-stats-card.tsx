@@ -11,7 +11,9 @@ export function TournamentStatsCard({ stats }: Props) {
     <div>
       <h2 className="text-base font-semibold mb-3">Turnuva İstatistikleri</h2>
       <div className="grid grid-cols-2 gap-3">
+        <StatItem label="Oynanan Maç" value={String(stats.completedMatches)} />
         <StatItem label="Toplam Gol" value={String(stats.totalGoals)} />
+        <StatItem label="Maç Başına Gol" value={String(stats.avgGoalsPerMatch)} />
         <StatItem label="Gol Yenmeyen Maç" value={String(stats.cleanSheets)} />
         {stats.biggestWin && (
           <StatItem

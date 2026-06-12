@@ -18,7 +18,9 @@ export type StandingRow = {
 };
 
 export type TournamentStats = {
+  completedMatches: number;
   totalGoals: number;
+  avgGoalsPerMatch: number;
   cleanSheets: number;
   biggestWin: {
     margin: number;
@@ -130,11 +132,13 @@ type StatsMatch = {
 export function computeTournamentStats(matches: StatsMatch[]): TournamentStats {
   let totalGoals = 0;
   let cleanSheets = 0;
+  let completedMatches = 0;
   let biggestWin: TournamentStats["biggestWin"] = null;
   let highestScoring: TournamentStats["highestScoring"] = null;
 
   for (const m of matches) {
     if (m.homeScore === null || m.awayScore === null) continue;
+    completedMatches++;
     const total = m.homeScore + m.awayScore;
     const margin = Math.abs(m.homeScore - m.awayScore);
     totalGoals += total;
@@ -163,5 +167,9 @@ export function computeTournamentStats(matches: StatsMatch[]): TournamentStats {
     }
   }
 
-  return { totalGoals, cleanSheets, biggestWin, highestScoring };
+  const avgGoalsPerMatch = completedMatches > 0
+    ? Math.round((totalGoals / completedMatches) * 10) / 10
+    : 0;
+
+  return { completedMatches, totalGoals, avgGoalsPerMatch, cleanSheets, biggestWin, highestScoring };
 }
