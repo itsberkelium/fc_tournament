@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 import { getSettings } from "@/lib/settings";
 import { PwaInstallBanner } from "@/components/pwa-install-banner";
+import { UpdateBanner } from "@/components/update-banner";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -57,6 +58,7 @@ export default function RootLayout({
       className={`${openSans.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <UpdateBanner />
         {children}
         <PwaInstallBanner />
       </body>
