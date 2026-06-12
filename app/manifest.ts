@@ -2,8 +2,13 @@ import type { MetadataRoute } from "next";
 import { getSettings } from "@/lib/settings";
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  const settings = await getSettings();
-  const name = settings.tournamentName;
+  let name = "EA FC 26 Ligi";
+  try {
+    const settings = await getSettings();
+    name = settings.tournamentName;
+  } catch {
+    // DB unavailable at build time; use default
+  }
 
   return {
     name,

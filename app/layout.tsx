@@ -14,9 +14,16 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const DEFAULT_NAME = "EA FC 26 Ligi";
+
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSettings();
-  const name = settings.tournamentName;
+  let name = DEFAULT_NAME;
+  try {
+    const settings = await getSettings();
+    name = settings.tournamentName;
+  } catch {
+    // DB unavailable at build time; use default
+  }
 
   return {
     title: name,
