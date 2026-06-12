@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Open_Sans } from "next/font/google";
+import { getSettings } from "@/lib/settings";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -7,10 +8,27 @@ const openSans = Open_Sans({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "EA FC 26 Lig Yöneticisi",
-  description: "Özel EA FC 26 lig yönetim uygulaması",
+export const viewport: Viewport = {
+  themeColor: "#15803d",
+  width: "device-width",
+  initialScale: 1,
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+  const name = settings.tournamentName;
+
+  return {
+    title: name,
+    description: "FC Turnuva Yöneticisi",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: name,
+    },
+    formatDetection: { telephone: false },
+  };
+}
 
 export default function RootLayout({
   children,
