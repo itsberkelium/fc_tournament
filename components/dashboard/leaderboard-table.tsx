@@ -29,6 +29,7 @@ export function LeaderboardTable({ standings, currentPlayerName, onRowClick }: L
             <TableHead className="text-center w-10" title="Yenilen Gol">YG</TableHead>
             <TableHead className="text-center w-12" title="Averaj">Av</TableHead>
             <TableHead className="text-center w-10 font-bold" title="Puan">P</TableHead>
+            <TableHead className="text-center w-28" title="Son 5 Maç">Form</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -67,6 +68,24 @@ export function LeaderboardTable({ standings, currentPlayerName, onRowClick }: L
                   {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
                 </TableCell>
                 <TableCell className="text-center tabular-nums text-sm font-bold">{row.points}</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-0.5">
+                    {row.form.map((r, i) => (
+                      <span
+                        key={i}
+                        className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold ${
+                          r === "W"
+                            ? "bg-green-500 text-white"
+                            : r === "D"
+                            ? "bg-gray-400 text-white"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {r === "W" ? "G" : r === "D" ? "B" : "M"}
+                      </span>
+                    ))}
+                  </div>
+                </TableCell>
               </TableRow>
             );
           })}
