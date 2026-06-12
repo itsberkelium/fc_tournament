@@ -1,40 +1,150 @@
-// World Cup-inspired minimal trophy icon
-// Layout (100x100 viewBox):
-//   Globe:  cx=50, cy=22, r=14  (y 8–36)
-//   Arms:   widen from globe base to y≈54, taper back to stem at y=66
-//   Stem:   x 44–56, y 66–71
-//   Base 1: x 38–62, y 71–76
-//   Base 2: x 32–68, y 76–85
+// Trophy-on-controller icon — PS5 color scheme with 3D gradients
 const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="22" fill="#0f172a"/>
+  <defs>
+    <!-- Background: PS5 deep navy -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1C2354"/>
+      <stop offset="100%" stop-color="#080B18"/>
+    </linearGradient>
 
-  <!-- Left figure arm: starts at globe bottom-left, sweeps outward then tucks back into stem -->
-  <path d="M38,34 C32,36 24,44 24,54 C24,62 30,67 40,67 L44,67 L44,60 C36,60 32,56 32,52 C32,47 37,43 42,41 L44,38 Z" fill="#fbbf24"/>
+    <!-- Trophy: bright gold top-left to dark shadow bottom-right -->
+    <linearGradient id="gold" x1="0.1" y1="0" x2="0.95" y2="1">
+      <stop offset="0%"   stop-color="#FFF4B0"/>
+      <stop offset="30%"  stop-color="#F5C200"/>
+      <stop offset="70%"  stop-color="#B87E00"/>
+      <stop offset="100%" stop-color="#6B4800"/>
+    </linearGradient>
+    <!-- Handle same gold but re-angled -->
+    <linearGradient id="goldH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#FFE55A"/>
+      <stop offset="50%"  stop-color="#F5C200"/>
+      <stop offset="100%" stop-color="#9A6800"/>
+    </linearGradient>
 
-  <!-- Right figure arm (mirror) -->
-  <path d="M62,34 C68,36 76,44 76,54 C76,62 70,67 60,67 L56,67 L56,60 C64,60 68,56 68,52 C68,47 63,43 58,41 L56,38 Z" fill="#fbbf24"/>
+    <!-- Controller top surface: PS5 white → ice-blue -->
+    <linearGradient id="ctrl" x1="0.25" y1="0" x2="0.75" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="55%"  stop-color="#D0D8FF"/>
+      <stop offset="100%" stop-color="#7A8FC0"/>
+    </linearGradient>
+    <!-- Controller bottom face: darker for depth -->
+    <linearGradient id="ctrlB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#A8B4D8"/>
+      <stop offset="100%" stop-color="#5566A0"/>
+    </linearGradient>
 
-  <!-- Central column connecting globe to stem -->
-  <rect x="44" y="34" width="12" height="33" rx="1" fill="#fbbf24"/>
+    <filter id="sh">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.8"
+                    flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
 
-  <!-- Globe -->
-  <circle cx="50" cy="22" r="14" fill="#fbbf24"/>
+  <!-- Background rounded square -->
+  <rect width="100" height="100" rx="20" fill="url(#bg)"/>
 
-  <!-- Globe latitude line -->
-  <ellipse cx="50" cy="22" rx="14" ry="6" fill="none" stroke="#92400e" stroke-width="1.4" opacity="0.45"/>
-  <!-- Globe meridian line -->
-  <line x1="50" y1="8" x2="50" y2="36" stroke="#92400e" stroke-width="1.4" opacity="0.45"/>
-  <!-- Globe equator -->
-  <line x1="36" y1="22" x2="64" y2="22" stroke="#92400e" stroke-width="1.4" opacity="0.45"/>
+  <!-- ─── CONTROLLER ─── (behind trophy) -->
+  <g filter="url(#sh)">
+    <!-- Main controller silhouette (PS-style two-bump shape) -->
+    <path d="
+      M 14,72
+      C 12,67 12,60 17,55
+      C 21,51 27,51 31,54
+      C 34,56 36,58 40,58
+      C 44,58 47,56 50,56
+      C 53,56 56,58 60,58
+      C 64,58 66,56 69,54
+      C 73,51 79,51 83,55
+      C 88,60 88,67 86,72
+      C 84,79 78,85 68,86
+      C 60,87 55,83 50,83
+      C 45,83 40,87 32,86
+      C 22,85 16,79 14,72 Z
+    " fill="url(#ctrl)"/>
 
-  <!-- Stem -->
-  <rect x="44" y="67" width="12" height="5" rx="2" fill="#fbbf24"/>
+    <!-- Bottom face overlay for 3D depth -->
+    <path d="
+      M 18,75
+      C 17,71 18,67 20,64
+      C 22,62 25,61 28,62
+      C 32,63 34,65 38,66
+      C 43,67 47,65 50,65
+      C 53,65 57,67 62,66
+      C 66,65 68,63 72,62
+      C 75,61 78,62 80,64
+      C 82,67 83,71 82,75
+      C 80,81 74,84 66,85
+      C 58,86 54,82 50,82
+      C 46,82 42,86 34,85
+      C 26,84 20,81 18,75 Z
+    " fill="url(#ctrlB)"/>
 
-  <!-- Base tier 1 -->
-  <rect x="37" y="72" width="26" height="5" rx="2" fill="#fbbf24"/>
+    <!-- Center notch at top (dark dip where trophy stem sits) -->
+    <path d="M 43,57 Q 50,61 57,57" fill="#0D1230"/>
 
-  <!-- Base tier 2 (wider, accent shade for depth) -->
-  <rect x="31" y="77" width="38" height="8" rx="3" fill="#d97706"/>
+    <!-- D-pad horizontal -->
+    <rect x="19" y="66" width="13" height="4" rx="2" fill="#001166"/>
+    <!-- D-pad vertical -->
+    <rect x="23.5" y="61.5" width="4" height="13" rx="2" fill="#001166"/>
+
+    <!-- Face buttons (4 circles) -->
+    <circle cx="72"   cy="63"   r="2.4" fill="#001166"/>
+    <circle cx="67.5" cy="67.5" r="2.4" fill="#001166"/>
+    <circle cx="76.5" cy="67.5" r="2.4" fill="#001166"/>
+    <circle cx="72"   cy="72"   r="2.4" fill="#001166"/>
+
+    <!-- Touchpad (PS5) -->
+    <rect x="44.5" y="61" width="11" height="7" rx="3.5" fill="#8899CC" opacity="0.85"/>
+
+    <!-- PS blue trim accent at bottom -->
+    <path d="M 30,82 Q 50,87 70,82"
+          stroke="#1144EE" stroke-width="1.2" fill="none" opacity="0.65"/>
+
+    <!-- Left-side highlight (light source top-left) -->
+    <path d="M 18,62 Q 15,68 15,74"
+          stroke="white" stroke-width="1.1" fill="none"
+          opacity="0.3" stroke-linecap="round"/>
+  </g>
+
+  <!-- ─── TROPHY ─── (in front) -->
+  <g filter="url(#sh)">
+    <!-- Left handle (C-arc) -->
+    <path d="M 32,16 C 24,15 17,21 17,28 C 17,35 24,40 32,40"
+          stroke="url(#goldH)" stroke-width="4"
+          fill="none" stroke-linecap="round"/>
+
+    <!-- Right handle (mirror) -->
+    <path d="M 68,16 C 76,15 83,21 83,28 C 83,35 76,40 68,40"
+          stroke="url(#goldH)" stroke-width="4"
+          fill="none" stroke-linecap="round"/>
+
+    <!-- Cup body: wide rim → narrows to stem -->
+    <path d="
+      M 28,7
+      L 72,7
+      C 74,7 75,9 75,11
+      L 69,40
+      C 65,47 58,49 55,50
+      L 55,53
+      L 45,53
+      L 45,50
+      C 42,49 35,47 31,40
+      L 25,11
+      C 25,9 26,7 28,7 Z
+    " fill="url(#gold)"/>
+
+    <!-- Rim bright highlight -->
+    <line x1="30" y1="8" x2="70" y2="8"
+          stroke="#FFFBE8" stroke-width="2.5"
+          stroke-linecap="round" opacity="0.8"/>
+
+    <!-- Vertical shine on cup left face -->
+    <line x1="34" y1="14" x2="37" y2="41"
+          stroke="#FFF4AA" stroke-width="2"
+          stroke-linecap="round" opacity="0.38"/>
+
+    <!-- Stem -->
+    <rect x="43" y="53" width="14" height="5" rx="2.5" fill="url(#gold)"/>
+  </g>
 </svg>`;
 
 export function iconDataUri(): string {
