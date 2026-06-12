@@ -34,7 +34,10 @@ export function PageHeader({ tournamentName }: { tournamentName: string }) {
 
   return (
     <header className="flex items-center justify-between border-b border-border px-6 py-4">
-      <h1 className="text-lg font-bold tracking-tight">{tournamentName}</h1>
+      <div className="flex items-baseline gap-2">
+        <h1 className="text-lg font-bold tracking-tight">{tournamentName}</h1>
+        <span className="text-xs text-muted-foreground/40 font-mono">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+      </div>
 
       {player && (
         <div className="relative" ref={menuRef}>
