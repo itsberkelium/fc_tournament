@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Flag } from "@/components/flag";
+import { MatchdaySection } from "@/components/fixtures/matchday-section";
+import type { Match } from "@/components/fixtures/match-card";
 import type { StandingRow } from "@/lib/standings";
 
 type SquadPlayer = { pos: string; name: string; club: string };
@@ -20,25 +22,6 @@ const POS_LABELS: Record<string, string> = {
   FW: "Forvet",
 };
 
-type MatchPlayer = {
-  id: string;
-  playerName: string;
-  teamId: string;
-  teamName: string;
-  isDisqualified: boolean;
-};
-
-type FixtureMatch = {
-  id: string;
-  round: number;
-  isPlayoff: boolean;
-  isCompleted: boolean;
-  homeScore: number | null;
-  awayScore: number | null;
-  homePlayer: MatchPlayer;
-  awayPlayer: MatchPlayer;
-};
-
 type Props = {
   row: StandingRow | null;
   onClose: () => void;
@@ -47,7 +30,7 @@ type Props = {
 export function SquadModal({ row, onClose }: Props) {
   const [squad, setSquad] = useState<SquadPlayer[]>([]);
   const [squadLoading, setSquadLoading] = useState(false);
-  const [matches, setMatches] = useState<FixtureMatch[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
 
   useEffect(() => {
@@ -65,7 +48,7 @@ export function SquadModal({ row, onClose }: Props) {
     setMatchesLoading(true);
     fetch("/api/fixtures")
       .then((r) => r.json())
-      .then((data: { matches: FixtureMatch[] }) => {
+      .then((data: { matches: Match[] }) => {
         const playerMatches = (data.matches ?? []).filter(
           (m) =>
             !m.isPlayoff &&
@@ -81,6 +64,12 @@ export function SquadModal({ row, onClose }: Props) {
     (acc[p.pos] ??= []).push(p);
     return acc;
   }, {});
+
+  const matchesByRound = matches.reduce<Record<number, Match[]>>((acc, m) => {
+    (acc[m.round] ??= []).push(m);
+    return acc;
+  }, {});
+  const rounds = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
 
   return (
     <Dialog open={!!row} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -149,35 +138,17 @@ export function SquadModal({ row, onClose }: Props) {
               </p>
             )}
             {!matchesLoading && matches.length > 0 && (
-              <div className="space-y-2 pt-1">
-                {matches.map((m) => {
-                  const isHome = m.homePlayer.id === row?.playerId;
-                  const opponent = isHome ? m.awayPlayer : m.homePlayer;
-                  const myScore = isHome ? m.homeScore : m.awayScore;
-                  const oppScore = isHome ? m.awayScore : m.homeScore;
-                  let resultColor = "text-muted-foreground";
-                  if (m.isCompleted && myScore !== null && oppScore !== null) {
-                    if (myScore > oppScore) resultColor = "text-green-500";
-                    else if (myScore < oppScore) resultColor = "text-red-500";
-                    else resultColor = "text-yellow-500";
-                  }
-                  return (
-                    <div key={m.id} className="rounded-md border px-3 py-2 text-sm">
-                      <p className="text-xs text-muted-foreground mb-1">Maçgünü {m.round}</p>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <Flag teamId={opponent.teamId} teamName={opponent.teamName} size={18} />
-                          <span className="truncate font-medium">{opponent.playerName}</span>
-                        </div>
-                        <span className={`shrink-0 font-semibold tabular-nums ${resultColor}`}>
-                          {m.isCompleted && myScore !== null && oppScore !== null
-                            ? (isHome ? `${myScore}–${oppScore}` : `${oppScore}–${myScore}`)
-                            : "–"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="space-y-4 pt-1">
+                {rounds.map((round) => (
+                  <MatchdaySection
+                    key={round}
+                    day={round}
+                    matches={matchesByRound[round] as Match[]}
+                    isCurrentDay={false}
+                    showHeader
+                    onSave={async (): Promise<boolean> => false}
+                  />
+                ))}
               </div>
             )}
           </TabsContent>
