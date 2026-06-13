@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     db.match.findMany({
       where: { isCompleted: true, isPlayoff: false },
       include: { homePlayer: true, awayPlayer: true },
-      orderBy: [{ updatedAt: "desc" }],
+      orderBy: [{ updatedAt: { sort: "desc", nulls: "last" } }, { round: "desc" }],
     }),
     db.match.count({ where: { isPlayoff: false } }),
     getSettings(),

@@ -9,7 +9,7 @@ export async function GET() {
     db.match.findMany({
       where: { isCompleted: true, isPlayoff: false },
       include: { homePlayer: true, awayPlayer: true },
-      orderBy: [{ updatedAt: "desc" }],
+      orderBy: [{ updatedAt: { sort: "desc", nulls: "last" } }, { round: "desc" }],
     }),
   ]);
 

@@ -34,7 +34,7 @@ model Match {
   isPlayoff    Boolean  @default(false)
   bracketSlot  Int?
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime?
 
   // Define relationships
   homePlayer Player @relation("HomePlayer", fields: [homePlayerId], references: [id])
