@@ -78,7 +78,7 @@ export function MatchCard({ match, currentPlayerName, perspectivePlayerId, onPla
   }
 
   return (
-    <div className={`px-4 py-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}>
+    <div className={`px-4 py-3 space-y-2 rounded-md border border-border ${isMyMatch ? "bg-primary/5" : ""}`}>
       <div className="flex items-center gap-3">
         {/* Home */}
         <div
