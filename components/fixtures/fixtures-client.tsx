@@ -120,7 +120,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
               </div>
             )}
 
-            <div className="flex flex-col px-6 py-4 space-y-6">
+            <div className={viewMode === "all" ? "grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 py-4 items-start" : "flex flex-col px-6 py-4 space-y-6"}>
               {(viewMode === "day" ? [activeDay] : matchdays).map((day) => {
                 const dayAllMatches = matches.filter((m) => m.round === day);
                 const dayMatches = filterMatches(dayAllMatches);
