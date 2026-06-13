@@ -29,10 +29,11 @@ type MatchCardProps = {
   match: Match;
   currentPlayerName?: string;
   perspectivePlayerId?: string;
+  onPlayerClick?: (player: MatchPlayer) => void;
   onSave: (matchId: string, homeScore: number, awayScore: number) => Promise<boolean>;
 };
 
-export function MatchCard({ match, currentPlayerName, perspectivePlayerId, onSave }: MatchCardProps) {
+export function MatchCard({ match, currentPlayerName, perspectivePlayerId, onPlayerClick, onSave }: MatchCardProps) {
   const [scoreInput, setScoreInput] = useState<{ home: string; away: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -80,7 +81,10 @@ export function MatchCard({ match, currentPlayerName, perspectivePlayerId, onSav
     <div className={`px-4 py-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}>
       <div className="flex items-center gap-3">
         {/* Home */}
-        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+        <div
+          className={`flex items-center gap-2 flex-1 justify-end min-w-0 ${onPlayerClick ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+          onClick={() => onPlayerClick?.(match.homePlayer)}
+        >
           <div className="text-right min-w-0">
             <div className="flex items-center justify-end gap-1.5">
               {match.homePlayer.isDisqualified && <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">DSK</Badge>}
@@ -127,7 +131,10 @@ export function MatchCard({ match, currentPlayerName, perspectivePlayerId, onSav
         </div>
 
         {/* Away */}
-        <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
+        <div
+          className={`flex items-center gap-2 flex-1 justify-start min-w-0 ${onPlayerClick ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+          onClick={() => onPlayerClick?.(match.awayPlayer)}
+        >
           <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">

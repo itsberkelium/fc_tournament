@@ -11,6 +11,7 @@ import { usePlayerStore } from "@/lib/stores/player-store";
 import { publicApi } from "@/lib/api";
 import type { StandingRow, TournamentStats } from "@/lib/standings";
 import type { RecentMatch } from "@/lib/api";
+import type { PlayerRef } from "@/components/dashboard/squad-modal";
 
 type DashboardClientProps = {
   initialStandings: StandingRow[];
@@ -32,7 +33,7 @@ export function DashboardClient({
   const [standings, setStandings] = useState(initialStandings);
   const [recentMatches, setRecentMatches] = useState(initialRecentMatches);
   const [stats, setStats] = useState(initialStats);
-  const [selectedRow, setSelectedRow] = useState<StandingRow | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerRef | null>(null);
   const { player } = usePlayerStore();
 
   const refreshData = useCallback(async () => {
@@ -74,7 +75,7 @@ export function DashboardClient({
             <LeaderboardTable
               standings={standings}
               currentPlayerName={player?.playerName}
-              onRowClick={setSelectedRow}
+              onRowClick={(r: StandingRow) => setSelectedPlayer(r)}
             />
           )}
         </div>
@@ -88,7 +89,7 @@ export function DashboardClient({
         )}
       </main>
 
-      <SquadModal row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <SquadModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </div>
   );
 }

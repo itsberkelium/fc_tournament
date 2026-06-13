@@ -6,9 +6,11 @@ import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { FixtureToolbar } from "@/components/fixtures/fixture-toolbar";
 import { MatchdaySection } from "@/components/fixtures/matchday-section";
+import { SquadModal } from "@/components/dashboard/squad-modal";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { playerApi } from "@/lib/api";
-import type { Match } from "@/components/fixtures/match-card";
+import type { Match, MatchPlayer } from "@/components/fixtures/match-card";
+import type { PlayerRef } from "@/components/dashboard/squad-modal";
 
 type FixturesClientProps = {
   initialMatches: Match[];
@@ -20,8 +22,13 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
   const [matches, setMatches] = useState(initialMatches);
   const [viewMode, setViewMode] = useState<"day" | "all">("day");
   const [myMatchesOnly, setMyMatchesOnly] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerRef | null>(null);
   const { player } = usePlayerStore();
   const currentPlayerName = player?.playerName;
+
+  const handlePlayerClick = useCallback((p: MatchPlayer) => {
+    setSelectedPlayer({ playerId: p.id, playerName: p.playerName, teamId: p.teamId, teamName: p.teamName });
+  }, []);
 
   const matchdays = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
 
@@ -126,6 +133,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
                     isCurrentDay={day === currentMatchday}
                     showHeader={viewMode === "all"}
                     currentPlayerName={currentPlayerName}
+                    onPlayerClick={handlePlayerClick}
                     onSave={handleSave}
                   />
                 );
@@ -139,6 +147,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
           </>
         )}
       </main>
+      <SquadModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </div>
   );
 }

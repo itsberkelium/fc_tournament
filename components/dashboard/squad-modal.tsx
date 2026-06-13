@@ -11,7 +11,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Flag } from "@/components/flag";
 import { MatchdaySection } from "@/components/fixtures/matchday-section";
 import type { Match } from "@/components/fixtures/match-card";
-import type { StandingRow } from "@/lib/standings";
 
 type SquadPlayer = { pos: string; name: string; club: string };
 
@@ -22,23 +21,30 @@ const POS_LABELS: Record<string, string> = {
   FW: "Forvet",
 };
 
+export type PlayerRef = {
+  playerId: string;
+  playerName: string;
+  teamId: string;
+  teamName: string;
+};
+
 type Props = {
-  row: StandingRow | null;
+  player: PlayerRef | null;
   onClose: () => void;
 };
 
-export function SquadModal({ row, onClose }: Props) {
+export function SquadModal({ player, onClose }: Props) {
   const [squad, setSquad] = useState<SquadPlayer[]>([]);
   const [squadLoading, setSquadLoading] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
 
   useEffect(() => {
-    if (!row) return;
+    if (!player) return;
 
     setSquad([]);
     setSquadLoading(true);
-    fetch(`/api/squad/${row.teamId}`)
+    fetch(`/api/squad/${player.teamId}`)
       .then((r) => r.json())
       .then((data) => setSquad(data.squad ?? []))
       .catch(() => setSquad([]))
@@ -52,13 +58,13 @@ export function SquadModal({ row, onClose }: Props) {
         const playerMatches = (data.matches ?? []).filter(
           (m) =>
             !m.isPlayoff &&
-            (m.homePlayer.id === row.playerId || m.awayPlayer.id === row.playerId)
+            (m.homePlayer.id === player.playerId || m.awayPlayer.id === player.playerId)
         );
         setMatches(playerMatches);
       })
       .catch(() => setMatches([]))
       .finally(() => setMatchesLoading(false));
-  }, [row?.teamId, row?.playerId]);
+  }, [player?.teamId, player?.playerId]);
 
   const grouped = squad.reduce<Record<string, SquadPlayer[]>>((acc, p) => {
     (acc[p.pos] ??= []).push(p);
@@ -72,15 +78,15 @@ export function SquadModal({ row, onClose }: Props) {
   const rounds = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
 
   return (
-    <Dialog open={!!row} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog open={!!player} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0">
-          {row && (
+          {player && (
             <div className="flex items-center gap-3">
-              <Flag teamId={row.teamId} teamName={row.teamName} size={40} />
+              <Flag teamId={player.teamId} teamName={player.teamName} size={40} />
               <div>
-                <DialogTitle>{row.teamName}</DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">{row.playerName}</p>
+                <DialogTitle>{player.teamName}</DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">{player.playerName}</p>
               </div>
             </div>
           )}
@@ -146,7 +152,7 @@ export function SquadModal({ row, onClose }: Props) {
                     matches={matchesByRound[round] as Match[]}
                     isCurrentDay={false}
                     showHeader
-                    perspectivePlayerId={row?.playerId}
+                    perspectivePlayerId={player?.playerId}
                     onSave={async (): Promise<boolean> => false}
                   />
                 ))}

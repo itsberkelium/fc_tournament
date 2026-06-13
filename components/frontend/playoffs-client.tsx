@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { Flag } from "@/components/flag";
+import { SquadModal } from "@/components/dashboard/squad-modal";
 import { getFeederLabel, getThirdPlaceFeederLabel } from "@/lib/playoffs";
 import { playerApi } from "@/lib/api";
+import type { PlayerRef } from "@/components/dashboard/squad-modal";
 
 type MatchPlayer = { id: string; playerName: string; teamId: string; teamName: string; isDisqualified?: boolean };
 
@@ -75,10 +77,11 @@ type ListMatchCardProps = {
   teamCount: number;
   currentPlayerName?: string;
   isThirdPlace?: boolean;
+  onPlayerClick?: (player: MatchPlayer) => void;
   onSave: (matchId: string, homeScore: number, awayScore: number) => Promise<boolean>;
 };
 
-function ListMatchCard({ match, round, totalRounds, teamCount, currentPlayerName, isThirdPlace = false, onSave }: ListMatchCardProps) {
+function ListMatchCard({ match, round, totalRounds, teamCount, currentPlayerName, isThirdPlace = false, onPlayerClick, onSave }: ListMatchCardProps) {
   const [scoreInput, setScoreInput] = useState<{ home: string; away: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -132,7 +135,10 @@ function ListMatchCard({ match, round, totalRounds, teamCount, currentPlayerName
     <div className={`rounded-md border border-border p-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}>
       <div className="flex items-center gap-2">
         {/* Home */}
-        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+        <div
+          className={`flex items-center gap-2 flex-1 justify-end min-w-0 ${onPlayerClick && match.homePlayer && !match.isPlaceholder ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+          onClick={() => match.homePlayer && !match.isPlaceholder && onPlayerClick?.(match.homePlayer)}
+        >
           <div className="text-right min-w-0">
             {match.homePlayer && !match.isPlaceholder ? (
               <>
@@ -184,7 +190,10 @@ function ListMatchCard({ match, round, totalRounds, teamCount, currentPlayerName
         </div>
 
         {/* Away */}
-        <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
+        <div
+          className={`flex items-center gap-2 flex-1 justify-start min-w-0 ${onPlayerClick && match.awayPlayer && !match.isPlaceholder ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+          onClick={() => match.awayPlayer && !match.isPlaceholder && onPlayerClick?.(match.awayPlayer)}
+        >
           {match.awayPlayer && !match.isPlaceholder && (
             <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
           )}
@@ -252,9 +261,10 @@ type BracketMatchCardProps = {
   teamCount: number;
   currentPlayerName?: string;
   isThirdPlace?: boolean;
+  onPlayerClick?: (player: MatchPlayer) => void;
 };
 
-function BracketMatchCard({ match, round, totalRounds, teamCount, currentPlayerName, isThirdPlace = false }: BracketMatchCardProps) {
+function BracketMatchCard({ match, round, totalRounds, teamCount, currentPlayerName, isThirdPlace = false, onPlayerClick }: BracketMatchCardProps) {
   const isMyMatch =
     !!currentPlayerName &&
     (match.homePlayer?.playerName === currentPlayerName || match.awayPlayer?.playerName === currentPlayerName);
@@ -276,6 +286,7 @@ function BracketMatchCard({ match, round, totalRounds, teamCount, currentPlayerN
 
   function PlayerRow({ p, isWinner, score, ph }: { p: MatchPlayer | null; isWinner: boolean; score: number | null; ph: string }) {
     const faded = match.isCompleted && !isWinner;
+    const clickable = !!onPlayerClick && !!p && !match.isPlaceholder;
     if (!p || match.isPlaceholder) {
       return (
         <div className="flex items-center gap-2.5 px-3 py-2.5 min-h-[48px]">
@@ -285,7 +296,10 @@ function BracketMatchCard({ match, round, totalRounds, teamCount, currentPlayerN
       );
     }
     return (
-      <div className={`flex items-center gap-2.5 px-3 py-2.5 min-h-[48px] ${isWinner ? "bg-primary/5" : ""}`}>
+      <div
+        className={`flex items-center gap-2.5 px-3 py-2.5 min-h-[48px] ${isWinner ? "bg-primary/5" : ""} ${clickable ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+        onClick={clickable ? () => onPlayerClick!(p) : undefined}
+      >
         <div className={faded ? "opacity-40" : ""}>
           <Flag teamId={p.teamId} teamName={p.teamName} />
         </div>
@@ -323,6 +337,11 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
   const { player } = usePlayerStore();
   const currentPlayerName = player?.playerName;
   const router = useRouter();
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerRef | null>(null);
+
+  const handlePlayerClick = useCallback((p: MatchPlayer) => {
+    setSelectedPlayer({ playerId: p.id, playerName: p.playerName, teamId: p.teamId, teamName: p.teamName });
+  }, []);
 
   const firstRoundMatchCount = bracket.rounds[0]?.matches.length ?? 1;
   const totalHeight = firstRoundMatchCount * BASE_SLOT_HEIGHT;
@@ -363,7 +382,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
         </div>
         {matches.map((match) => (
           <div key={match.slot} style={{ height: slotHeight, display: "flex", alignItems: "center", padding: "4px 0" }}>
-            <BracketMatchCard match={match} round={round} totalRounds={bracket.totalRounds} teamCount={teamCount} currentPlayerName={currentPlayerName} />
+            <BracketMatchCard match={match} round={round} totalRounds={bracket.totalRounds} teamCount={teamCount} currentPlayerName={currentPlayerName} onPlayerClick={handlePlayerClick} />
           </div>
         ))}
       </div>
@@ -417,7 +436,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
                   <div className="pt-5 border-t border-dashed border-border/50">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center mb-3">Üçüncülük Maçı</p>
                     <div style={{ width: "100%", maxWidth: 300, margin: "0 auto" }}>
-                      <BracketMatchCard match={bracket.thirdPlaceMatch} round={bracket.totalRounds} totalRounds={bracket.totalRounds} teamCount={teamCount} currentPlayerName={currentPlayerName} isThirdPlace />
+                      <BracketMatchCard match={bracket.thirdPlaceMatch} round={bracket.totalRounds} totalRounds={bracket.totalRounds} teamCount={teamCount} currentPlayerName={currentPlayerName} isThirdPlace onPlayerClick={handlePlayerClick} />
                     </div>
                   </div>
                 )}
@@ -440,6 +459,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
                             totalRounds={bracket.totalRounds}
                             teamCount={teamCount}
                             currentPlayerName={currentPlayerName}
+                            onPlayerClick={handlePlayerClick}
                             onSave={handleSave}
                           />
                         ))}
@@ -456,6 +476,7 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
                             teamCount={teamCount}
                             currentPlayerName={currentPlayerName}
                             isThirdPlace
+                            onPlayerClick={handlePlayerClick}
                             onSave={handleSave}
                           />
                         </div>
@@ -472,6 +493,8 @@ export function PlayoffsClient({ tournamentName, teamCount, leagueComplete, play
           <p className="text-xs text-muted-foreground text-center">* Lig tamamlandığında sıralar netleşecek.</p>
         )}
       </main>
+
+      <SquadModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </div>
   );
 }
