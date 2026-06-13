@@ -33,7 +33,8 @@ export function PageHeader({ tournamentName }: { tournamentName: string }) {
   const teamFlag = player ? ALL_TEAMS.find((t) => t.id === player.teamId)?.flag : null;
 
   return (
-    <header className="flex items-center justify-between border-b border-border px-6 py-4">
+    <header className="border-b border-border px-6 py-4">
+      <div className="flex items-center justify-between max-w-6xl mx-auto w-full">
       <div className="flex items-baseline gap-2">
         <h1 className="text-lg font-bold tracking-tight">{tournamentName}</h1>
         <span className="text-xs text-muted-foreground/40 font-mono">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
@@ -80,6 +81,7 @@ export function PageHeader({ tournamentName }: { tournamentName: string }) {
           )}
         </div>
       )}
+      </div>
     </header>
   );
 }
