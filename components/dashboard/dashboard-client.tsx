@@ -54,35 +54,37 @@ export function DashboardClient({
       <PageHeader tournamentName={tournamentName} />
       <PageNav active="dashboard" showPlayoffs={playoffEnabled} />
 
-      <main className="flex flex-1 flex-col p-6 max-w-4xl w-full mx-auto space-y-8">
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold">Lig Tablosu</h2>
-            {!tournamentStarted && (
-              <span className="text-xs text-muted-foreground">Turnuva henüz başlamadı</span>
+      <main className="flex flex-1 flex-col p-6 max-w-6xl w-full mx-auto space-y-8">
+        <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start space-y-8 lg:space-y-0">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold">Lig Tablosu</h2>
+              {!tournamentStarted && (
+                <span className="text-xs text-muted-foreground">Turnuva henüz başlamadı</span>
+              )}
+            </div>
+
+            {standings.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <p className="text-sm text-muted-foreground">
+                  {tournamentStarted
+                    ? "Henüz tamamlanan maç yok."
+                    : "Turnuva başladığında tablo burada görünecek."}
+                </p>
+              </div>
+            ) : (
+              <LeaderboardTable
+                standings={standings}
+                currentPlayerName={player?.playerName}
+                onRowClick={(r: StandingRow) => setSelectedPlayer(r)}
+              />
             )}
           </div>
 
-          {standings.length === 0 ? (
-            <div className="flex items-center justify-center py-16">
-              <p className="text-sm text-muted-foreground">
-                {tournamentStarted
-                  ? "Henüz tamamlanan maç yok."
-                  : "Turnuva başladığında tablo burada görünecek."}
-              </p>
-            </div>
-          ) : (
-            <LeaderboardTable
-              standings={standings}
-              currentPlayerName={player?.playerName}
-              onRowClick={(r: StandingRow) => setSelectedPlayer(r)}
-            />
+          {tournamentStarted && (
+            <TournamentStatsCard stats={stats} />
           )}
         </div>
-
-        {tournamentStarted && (
-          <TournamentStatsCard stats={stats} />
-        )}
 
         {tournamentStarted && (
           <RecentMatchesFeed matches={recentMatches} />

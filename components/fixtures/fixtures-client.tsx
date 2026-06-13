@@ -77,7 +77,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
       <PageHeader tournamentName={tournamentName} />
       <PageNav active="fixtures" showPlayoffs={playoffEnabled} />
 
-      <main className="flex flex-1 flex-col max-w-2xl w-full mx-auto">
+      <main className="flex flex-1 flex-col max-w-6xl w-full mx-auto">
         {!tournamentStarted ? (
           <div className="flex flex-1 items-center justify-center py-16">
             <p className="text-sm text-muted-foreground">Turnuva başladığında fikstür burada görünecek.</p>
