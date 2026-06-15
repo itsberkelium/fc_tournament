@@ -245,7 +245,8 @@ All admin routes require `Authorization: Bearer <ADMIN_PASSWORD>`.
 ```json
 { "action": "updatePermissions", "canEnterScore": true/false }
 { "action": "toggleDisabled" }
-{ "action": "disqualify" }  // irreversible; returns affectedMatches[]
+{ "action": "disqualify" }  // returns affectedMatches[]
+{ "action": "reset" }       // clears isDisqualified/isDisabled, sets canEnterScore=true, resets all match scores to null
 ```
 
 ---
