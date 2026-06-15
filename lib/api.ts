@@ -56,7 +56,8 @@ export type SettingsUpdateBody = { tournamentName?: string; registrationLocked?:
 export type PlayerUpdateBody =
   | { action: "updatePermissions"; canEnterScore: boolean }
   | { action: "toggleDisabled" }
-  | { action: "disqualify" };
+  | { action: "disqualify" }
+  | { action: "reset" };
 
 export const playerApi = {
   getMe: (playerName: string): Promise<MeResponse> =>

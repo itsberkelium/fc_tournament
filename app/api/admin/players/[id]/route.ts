@@ -92,6 +92,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: true, player: updated, affectedMatches });
     }
 
+    // Reset — clears disqualified/disabled status and all match scores
+    if (action === "reset") {
+      await db.match.updateMany({
+        where: { OR: [{ homePlayerId: id }, { awayPlayerId: id }] },
+        data: { homeScore: null, awayScore: null, isCompleted: false },
+      });
+
+      const updated = await db.player.update({
+        where: { id },
+        data: { isDisqualified: false, isDisabled: false, canEnterScore: true },
+      });
+      return NextResponse.json({ success: true, player: updated });
+    }
+
     return NextResponse.json({ message: "Geçersiz işlem." }, { status: 400 });
   } catch (e: any) {
     return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });

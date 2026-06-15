@@ -9,6 +9,8 @@ import type { Player } from "@/components/admin/delete-player-dialog";
 
 type AffectedMatch = { id: string; opponentName: string };
 
+type Step = "idle" | "confirm-disqualify" | "done-disqualify" | "confirm-reset";
+
 type Props = {
   player: Player | null;
   onClose: () => void;
@@ -20,11 +22,10 @@ export function EditPlayerDialog({ player, onClose, onUpdated }: Props) {
   const [canEnterScore, setCanEnterScore] = useState(player?.canEnterScore ?? true);
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
-  const [disqualifyStep, setDisqualifyStep] = useState<"idle" | "confirm" | "done">("idle");
+  const [step, setStep] = useState<Step>("idle");
   const [affectedMatches, setAffectedMatches] = useState<AffectedMatch[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync local state when player changes
   const currentCanEnterScore = player?.canEnterScore ?? true;
 
   async function handleSavePermissions() {
@@ -66,8 +67,23 @@ export function EditPlayerDialog({ player, onClose, onUpdated }: Props) {
       const data = await res.json();
       if (!res.ok) { setError(data.message); return; }
       setAffectedMatches(data.affectedMatches ?? []);
-      setDisqualifyStep("done");
+      setStep("done-disqualify");
       onUpdated(data.player);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleReset() {
+    if (!player) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await adminApi.updatePlayer(player.id, { action: "reset" }, password);
+      const data = await res.json();
+      if (!res.ok) { setError(data.message); return; }
+      onUpdated(data.player);
+      onClose();
     } finally {
       setSaving(false);
     }
@@ -85,7 +101,7 @@ export function EditPlayerDialog({ player, onClose, onUpdated }: Props) {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {disqualifyStep === "done" ? (
+        {step === "done-disqualify" ? (
           <div className="space-y-3">
             <p className="text-sm font-medium text-destructive">Oyuncu diskalifiye edildi.</p>
             {affectedMatches.length > 0 ? (
@@ -106,7 +122,7 @@ export function EditPlayerDialog({ player, onClose, onUpdated }: Props) {
               <Button onClick={onClose}>Kapat</Button>
             </DialogFooter>
           </div>
-        ) : disqualifyStep === "confirm" ? (
+        ) : step === "confirm-disqualify" ? (
           <div className="space-y-3">
             <p className="text-sm">
               <strong>{player.playerName}</strong> diskalifiye edilecek. Bu işlem geri alınamaz.
@@ -115,9 +131,24 @@ export function EditPlayerDialog({ player, onClose, onUpdated }: Props) {
               Tüm bekleyen maçlar rakip lehine 3-0 olarak tamamlanacak.
             </p>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setDisqualifyStep("idle")} disabled={saving}>İptal</Button>
+              <Button variant="outline" onClick={() => setStep("idle")} disabled={saving}>İptal</Button>
               <Button variant="destructive" onClick={handleDisqualify} disabled={saving}>
                 {saving ? "İşleniyor..." : "Evet, Diskalifiye Et"}
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : step === "confirm-reset" ? (
+          <div className="space-y-3">
+            <p className="text-sm">
+              <strong>{player.playerName}</strong> sıfırlanacak.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Diskalifiye ve devre dışı durumları kaldırılacak, tüm maç skorları silinecek.
+            </p>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setStep("idle")} disabled={saving}>İptal</Button>
+              <Button variant="destructive" onClick={handleReset} disabled={saving}>
+                {saving ? "Sıfırlanıyor..." : "Evet, Sıfırla"}
               </Button>
             </DialogFooter>
           </div>
@@ -154,7 +185,7 @@ export function EditPlayerDialog({ player, onClose, onUpdated }: Props) {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => setDisqualifyStep("confirm")}
+                  onClick={() => setStep("confirm-disqualify")}
                   disabled={player.isDisqualified}
                 >
                   {player.isDisqualified ? "Diskalifiye Edildi" : "Diskalifiye Et"}
@@ -163,6 +194,23 @@ export function EditPlayerDialog({ player, onClose, onUpdated }: Props) {
               {player.isDisqualified && (
                 <p className="text-xs text-muted-foreground">Bu oyuncu diskalifiye edildi.</p>
               )}
+            </div>
+
+            <div className="border-t border-border" />
+
+            {/* Reset */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Sıfırla</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStep("confirm-reset")}
+              >
+                Oyuncuyu Sıfırla
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Tüm maçları, diskalifiye ve ban durumunu sıfırlar.
+              </p>
             </div>
 
             <DialogFooter className="gap-2">

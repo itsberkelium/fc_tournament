@@ -168,6 +168,7 @@ export function PlayersTab({ isAdmin = false }: { isAdmin?: boolean }) {
       </div>
 
       <EditPlayerDialog
+        key={editTarget?.id}
         player={editTarget}
         onClose={() => setEditTarget(null)}
         onUpdated={(updated) => setPlayers((prev) => prev.map((p) => p.id === updated.id ? { ...p, ...updated } : p))}
