@@ -1,3 +1,21 @@
+import type { StandingRow, TournamentStats } from "@/lib/standings";
+export type { StandingRow, TournamentStats };
+
+export type RecentMatch = {
+  id: string;
+  round: number;
+  homeScore: number;
+  awayScore: number;
+  homePlayer: { playerName: string; teamId: string; teamName: string };
+  awayPlayer: { playerName: string; teamId: string; teamName: string };
+};
+
+export type LeaderboardResponse = {
+  standings: StandingRow[];
+  recentMatches: RecentMatch[];
+  stats: TournamentStats;
+};
+
 const JSON_HEADERS = { "Content-Type": "application/json" };
 function bearer(pw: string) {
   return { ...JSON_HEADERS, Authorization: `Bearer ${pw}` };
@@ -126,7 +144,7 @@ export const adminApi = {
 };
 
 export const publicApi = {
-  getLeaderboard: () => fetch("/api/leaderboard").then((r) => r.json()),
+  getLeaderboard: (): Promise<LeaderboardResponse> => fetch("/api/leaderboard").then((r) => r.json()),
   getFixtures: () => fetch("/api/fixtures").then((r) => r.json()),
   getPlayoffs: () => fetch("/api/playoffs").then((r) => r.json()),
 };

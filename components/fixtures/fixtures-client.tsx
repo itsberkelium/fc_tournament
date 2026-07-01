@@ -6,9 +6,11 @@ import { PageHeader } from "@/components/frontend/page-header";
 import { PageNav } from "@/components/frontend/page-nav";
 import { FixtureToolbar } from "@/components/fixtures/fixture-toolbar";
 import { MatchdaySection } from "@/components/fixtures/matchday-section";
+import { SquadModal } from "@/components/dashboard/squad-modal";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { playerApi } from "@/lib/api";
-import type { Match } from "@/components/fixtures/match-card";
+import type { Match, MatchPlayer } from "@/components/fixtures/match-card";
+import type { PlayerRef } from "@/components/dashboard/squad-modal";
 
 type FixturesClientProps = {
   initialMatches: Match[];
@@ -20,8 +22,13 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
   const [matches, setMatches] = useState(initialMatches);
   const [viewMode, setViewMode] = useState<"day" | "all">("day");
   const [myMatchesOnly, setMyMatchesOnly] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerRef | null>(null);
   const { player } = usePlayerStore();
   const currentPlayerName = player?.playerName;
+
+  const handlePlayerClick = useCallback((p: MatchPlayer) => {
+    setSelectedPlayer({ playerId: p.id, playerName: p.playerName, teamId: p.teamId, teamName: p.teamName });
+  }, []);
 
   const matchdays = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
 
@@ -70,7 +77,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
       <PageHeader tournamentName={tournamentName} />
       <PageNav active="fixtures" showPlayoffs={playoffEnabled} />
 
-      <main className="flex flex-1 flex-col max-w-2xl w-full mx-auto">
+      <main className="flex flex-1 flex-col max-w-6xl w-full mx-auto">
         {!tournamentStarted ? (
           <div className="flex flex-1 items-center justify-center py-16">
             <p className="text-sm text-muted-foreground">Turnuva başladığında fikstür burada görünecek.</p>
@@ -113,7 +120,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
               </div>
             )}
 
-            <div className="flex flex-col px-6 py-4 space-y-6">
+            <div className={viewMode === "all" ? "grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 py-4 items-start" : "flex flex-col px-6 py-4 space-y-6"}>
               {(viewMode === "day" ? [activeDay] : matchdays).map((day) => {
                 const dayAllMatches = matches.filter((m) => m.round === day);
                 const dayMatches = filterMatches(dayAllMatches);
@@ -126,6 +133,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
                     isCurrentDay={day === currentMatchday}
                     showHeader={viewMode === "all"}
                     currentPlayerName={currentPlayerName}
+                    onPlayerClick={handlePlayerClick}
                     onSave={handleSave}
                   />
                 );
@@ -139,6 +147,7 @@ export function FixturesClient({ initialMatches, tournamentName, playoffEnabled 
           </>
         )}
       </main>
+      <SquadModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </div>
   );
 }

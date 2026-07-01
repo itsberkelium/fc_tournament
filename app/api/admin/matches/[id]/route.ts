@@ -16,7 +16,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     await db.match.update({
       where: { id },
-      data: { homeScore: null, awayScore: null, isCompleted: false },
+      data: { homeScore: null, awayScore: null, isCompleted: false, updatedAt: null },
     });
 
     return NextResponse.json({ success: true });
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const match = await db.match.update({
       where: { id },
-      data: { homeScore, awayScore, isCompleted: true },
+      data: { homeScore, awayScore, isCompleted: true, updatedAt: new Date() },
     });
 
     if (!existing.isCompleted) {

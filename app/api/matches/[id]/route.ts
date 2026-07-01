@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const updated = await db.match.update({
       where: { id },
-      data: { homeScore, awayScore, isCompleted: true },
+      data: { homeScore, awayScore, isCompleted: true, updatedAt: new Date() },
     });
 
     if (match.isPlayoff && match.bracketSlot !== null && match.bracketSlot >= 0) {

@@ -21,6 +21,17 @@ jobs:
             cd ${{ secrets.APP_DIR }}
             ./deploy.sh
 
+      - name: Notify Telegram
+        if: always()
+        uses: appleboy/telegram-action@v1.0.0
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ${{ job.status == 'success' && '✅' || '❌' }} *${{ github.event.repository.name }} — Production deploy ${{ job.status }}*
+            Commit: `${{ github.sha }}` by ${{ github.actor }}
+            ${{ github.event.head_commit.message }}
+
   deploy-dev:
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
@@ -34,3 +45,14 @@ jobs:
           script: |
             cd ${{ secrets.DEV_APP_DIR }}
             ./deploy-dev.sh
+
+      - name: Notify Telegram
+        if: always()
+        uses: appleboy/telegram-action@v1.0.0
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ${{ job.status == 'success' && '✅' || '❌' }} *${{ github.event.repository.name }} — Dev deploy ${{ job.status }}*
+            Commit: `${{ github.sha }}` by ${{ github.actor }}
+            ${{ github.event.head_commit.message }}

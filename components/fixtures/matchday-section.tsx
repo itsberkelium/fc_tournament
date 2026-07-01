@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { MatchCard, type Match } from "@/components/fixtures/match-card";
+import { MatchCard, type Match, type MatchPlayer } from "@/components/fixtures/match-card";
 
 type MatchdaySectionProps = {
   day: number;
@@ -7,6 +7,8 @@ type MatchdaySectionProps = {
   isCurrentDay: boolean;
   showHeader: boolean;
   currentPlayerName?: string;
+  perspectivePlayerId?: string;
+  onPlayerClick?: (player: MatchPlayer) => void;
   onSave: (matchId: string, homeScore: number, awayScore: number) => Promise<boolean>;
 };
 
@@ -16,6 +18,8 @@ export function MatchdaySection({
   isCurrentDay,
   showHeader,
   currentPlayerName,
+  perspectivePlayerId,
+  onPlayerClick,
   onSave,
 }: MatchdaySectionProps) {
   const allDone = matches.every((m) => m.isCompleted);
@@ -36,6 +40,8 @@ export function MatchdaySection({
             key={match.id}
             match={match}
             currentPlayerName={currentPlayerName}
+            perspectivePlayerId={perspectivePlayerId}
+            onPlayerClick={onPlayerClick}
             onSave={onSave}
           />
         ))}

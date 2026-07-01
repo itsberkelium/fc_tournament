@@ -28,10 +28,12 @@ export type Match = {
 type MatchCardProps = {
   match: Match;
   currentPlayerName?: string;
+  perspectivePlayerId?: string;
+  onPlayerClick?: (player: MatchPlayer) => void;
   onSave: (matchId: string, homeScore: number, awayScore: number) => Promise<boolean>;
 };
 
-export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) {
+export function MatchCard({ match, currentPlayerName, perspectivePlayerId, onPlayerClick, onSave }: MatchCardProps) {
   const [scoreInput, setScoreInput] = useState<{ home: string; away: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -64,11 +66,25 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
 
   const isDraw = scoreInput !== null && scoreInput.home !== "" && scoreInput.away !== "" && scoreInput.home === scoreInput.away;
 
+  let scoreColor = "";
+  if (perspectivePlayerId && match.isCompleted && match.homeScore !== null && match.awayScore !== null) {
+    const isHome = match.homePlayer.id === perspectivePlayerId;
+    const isAway = match.awayPlayer.id === perspectivePlayerId;
+    if (isHome || isAway) {
+      const myScore = isHome ? match.homeScore : match.awayScore;
+      const oppScore = isHome ? match.awayScore : match.homeScore;
+      scoreColor = myScore > oppScore ? "text-green-500" : myScore < oppScore ? "text-red-500" : "text-yellow-500";
+    }
+  }
+
   return (
-    <div className={`px-4 py-3 space-y-2 ${isMyMatch ? "bg-primary/5" : ""}`}>
+    <div className={`px-4 py-3 space-y-2 rounded-md border border-border ${isMyMatch ? "bg-primary/5" : ""}`}>
       <div className="flex items-center gap-3">
         {/* Home */}
-        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+        <div
+          className={`flex items-center gap-2 flex-1 justify-end min-w-0 ${onPlayerClick ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+          onClick={() => onPlayerClick?.(match.homePlayer)}
+        >
           <div className="text-right min-w-0">
             <div className="flex items-center justify-end gap-1.5">
               {match.homePlayer.isDisqualified && <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">DSK</Badge>}
@@ -89,7 +105,7 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-12 text-center px-1"
+                className="w-14 h-10 text-center text-base px-1"
                 placeholder="0"
                 value={scoreInput.home}
                 onChange={(e) => setScoreInput((prev) => prev && ({ ...prev, home: e.target.value.replace(/\D/g, "") }))}
@@ -99,14 +115,14 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-12 text-center px-1"
+                className="w-14 h-10 text-center text-base px-1"
                 placeholder="0"
                 value={scoreInput.away}
                 onChange={(e) => setScoreInput((prev) => prev && ({ ...prev, away: e.target.value.replace(/\D/g, "") }))}
               />
             </div>
           ) : match.isCompleted ? (
-            <span className="text-sm font-bold tabular-nums w-16 inline-block">
+            <span className={`text-sm font-bold tabular-nums w-16 inline-block ${scoreColor}`}>
               {match.homeScore} – {match.awayScore}
             </span>
           ) : (
@@ -115,7 +131,10 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
         </div>
 
         {/* Away */}
-        <div className="flex items-center gap-2 flex-1 justify-start min-w-0">
+        <div
+          className={`flex items-center gap-2 flex-1 justify-start min-w-0 ${onPlayerClick ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+          onClick={() => onPlayerClick?.(match.awayPlayer)}
+        >
           <Flag teamId={match.awayPlayer.teamId} teamName={match.awayPlayer.teamName} />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
@@ -135,18 +154,18 @@ export function MatchCard({ match, currentPlayerName, onSave }: MatchCardProps) 
           {isEditing ? (
             <>
               <Button
-                size="sm"
+                className="h-10 px-5 sm:h-8 sm:px-3"
                 disabled={isSaving || scoreInput.home === "" || scoreInput.away === "" || (match.isPlayoff && isDraw)}
                 onClick={handleSave}
               >
                 {isSaving ? "Kaydediliyor..." : "Kaydet"}
               </Button>
-              <Button size="sm" variant="outline" disabled={isSaving} onClick={handleCancel}>
+              <Button className="h-10 px-5 sm:h-8 sm:px-3" variant="outline" disabled={isSaving} onClick={handleCancel}>
                 İptal
               </Button>
             </>
           ) : (
-            <Button size="sm" variant="outline" onClick={handleEdit}>
+            <Button className="h-10 px-5 sm:h-8 sm:px-3" variant="outline" onClick={handleEdit}>
               {match.isCompleted ? "Skoru Düzenle" : "Skor Gir"}
             </Button>
           )}

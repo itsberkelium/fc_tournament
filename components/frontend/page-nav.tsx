@@ -7,7 +7,7 @@ type PageNavProps = {
 
 export function PageNav({ active, showPlayoffs }: PageNavProps) {
   return (
-    <nav className="flex gap-1 border-b border-border px-6">
+    <nav className="flex justify-center gap-1 border-b border-border px-6">
       <Link
         href="/dashboard"
         className={`px-3 py-2.5 text-sm transition-colors ${
